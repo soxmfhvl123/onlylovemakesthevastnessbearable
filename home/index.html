@@ -586,37 +586,6 @@ PROJECTS.forEach(proj => {
     bubble.className = 'click-me-bubble bubble-right';
     bubble.innerHTML = 'click me! <span>💕</span>';
     a.appendChild(bubble);
-  } else if (proj.label === 'THE COLLISION') {
-    const bubble = document.createElement('div');
-    bubble.className = 'click-me-bubble bubble-left';
-    bubble.innerHTML = 'click me! <span>💕</span>';
-    a.appendChild(bubble);
-  } else if (proj.label === 'THE GRAVITY BALL PIT') {
-    const bubble = document.createElement('div');
-    bubble.className = 'click-me-bubble bubble-right';
-    bubble.innerHTML = 'click me! <span>💕</span>';
-    a.appendChild(bubble);
-  } else if (proj.label === 'FLOATING AND TRAIL') {
-    const bubble = document.createElement('div');
-    bubble.className = 'click-me-bubble bubble-right';
-    bubble.innerHTML = 'click me! <span>💕</span>';
-    a.appendChild(bubble);
-  } else if (proj.label === 'THE VASTNESS') {
-    // Letter "V" is index 4 in "THE VASTNESS"
-    if (spans[4]) {
-      const bubble = document.createElement('div');
-      bubble.className = 'click-me-bubble bubble-top';
-      bubble.innerHTML = 'click me! <span>💕</span>';
-      spans[4].appendChild(bubble);
-    }
-  } else if (proj.label === 'FOUNTAIN') {
-    // Letter "T" is index 4 in "FOUNTAIN"
-    if (spans[4]) {
-      const bubble = document.createElement('div');
-      bubble.className = 'click-me-bubble bubble-bottom';
-      bubble.innerHTML = 'click me! <span>💕</span>';
-      spans[4].appendChild(bubble);
-    }
   }
 
   linksEl.appendChild(a);
