@@ -288,6 +288,58 @@ function animate() {
     indicators[i].vy = (indicators[i].vy + ay) * friction;
     indicators[i].x += indicators[i].vx;
     indicators[i].y += indicators[i].vy;
+
+    // ── COLLISION RESOLUTION: SECOND HAND VS HOUR CIRCLES ──
+    const letterRadius = 17; // half of font size 34
+    const maxLetters = secondLetters.length;
+    for (let j = 0; j < maxLetters; j++) {
+      const letterDist = (j + 1) * 22; // spacing = 22px
+      if (letterDist > clockRadius * 0.95) break;
+
+      // Base letter coordinate along the second hand line
+      let lx = centerX + letterDist * Math.cos(angleSec);
+      let ly = centerY + letterDist * Math.sin(angleSec);
+
+      // Account for mouse shift to align physical collision with visual position
+      const mdx = mouse.x - lx;
+      const mdy = mouse.y - ly;
+      const distToMouse = Math.sqrt(mdx * mdx + mdy * mdy);
+      if (distToMouse < 100) {
+        const force = (100 - distToMouse) / 100;
+        lx -= (mdx / distToMouse) * force * 15;
+        ly -= (mdy / distToMouse) * force * 15;
+      }
+
+      // Check distance between indicator and letter
+      const idx = indicators[i].x - lx;
+      const idy = indicators[i].y - ly;
+      const distToLetter = Math.sqrt(idx * idx + idy * idy);
+
+      // Recompute circle radius (including dynamic resonance & breathing)
+      let resonance = 0;
+      const diffSec = Math.abs(angleSec - indicatorAngle) % (Math.PI * 2);
+      const getDist = (diff) => Math.min(diff, Math.PI * 2 - diff);
+      if (getDist(diffSec) < 0.1) resonance += 0.8;
+      
+      const breath = 0.15 * Math.sin(now * 0.002 + i);
+      const sizeFactor = 1.35 + resonance * 0.4 + breath;
+      const circleRadius = 16 * sizeFactor;
+      const minDist = circleRadius + letterRadius;
+
+      if (distToLetter < minDist) {
+        const overlap = minDist - distToLetter;
+        const nx = idx / (distToLetter || 1);
+        const ny = idy / (distToLetter || 1);
+
+        // Displace the circle immediately to prevent penetration
+        indicators[i].x += nx * overlap * 0.8;
+        indicators[i].y += ny * overlap * 0.8;
+
+        // Apply a strong velocity push to create a realistic bounce
+        indicators[i].vx += nx * overlap * 2.2;
+        indicators[i].vy += ny * overlap * 2.2;
+      }
+    }
   }
 
   // 1. Draw Hour Indicators (12 Colored Glowing Circles exactly matching other love folders)
