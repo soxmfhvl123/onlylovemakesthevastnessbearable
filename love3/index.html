@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>L O V E 3 - The Gravity Ball Pit</title>
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+  <!-- Google Fonts — 18 families loaded for dynamic typographic effects -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:wght@400;700;900&family=Space+Mono:wght@400;700&family=Abril+Fatface&family=Righteous&family=Lobster&family=Oswald:wght@300;700&family=Dancing+Script:wght@700&family=Anton&family=Raleway:wght@100;900&family=Cormorant+Garamond:ital,wght@1,700&family=Pacifico&family=Black+Han+Sans&family=Cinzel:wght@900&family=Monoton&family=Bungee&family=Protest+Guerrilla&family=Bruno+Ace+SC&display=swap" rel="stylesheet" />
+
+  <!-- Matter.js Physics Engine -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #000; /* Pure black background as requested */
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      font-family: sans-serif;
+      touch-action: none; /* Prevent scrolling on mobile when interacting */
+    }
+
+    #matter-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 10;
+    }
+
+  </style>
+</head>
+<body>
+
+<canvas id="matter-canvas"></canvas>
+
+<script>
+/* ───────────────────────────────────────────
+   1. ASSETS & PALETTES
+─────────────────────────────────────────────*/
+const FONTS = [
+  "'Bebas Neue', sans-serif", "'Playfair Display', serif", "'Space Mono', monospace",
+  "'Abril Fatface', cursive", "'Righteous', cursive", "'Lobster', cursive",
+  "'Oswald', sans-serif", "'Dancing Script', cursive", "'Anton', sans-serif",
+  "'Raleway', sans-serif", "'Cormorant Garamond', serif", "'Pacifico', cursive",
+  "'Cinzel', serif", "'Monoton', cursive", "'Bungee', cursive",
+  "'Protest Guerrilla', sans-serif", "'Bruno Ace SC', cursive",
+];
+
+const ALL_COLORS = [
+  '#FF2D55','#FF9F0A','#30D158','#0A84FF','#BF5AF2','#FF375F',
+  '#FFD60A','#4ECDC4','#F72585','#4CC9F0','#06FFA5','#FF2979',
+  '#FF6B00','#FF0099','#00FFCC','#B400FF','#FFBE0B','#FB5607',
+  '#FF006E','#8338EC','#00F5D4','#F15BB5','#FEE440','#00BBF9',
+  '#FF4D6D','#C77DFF','#FFD166','#06D6A0','#39FF14','#FF073A',
+  '#0FF0FC','#FF6EC7',
+];
+
+// 10 distinct vibrant colors matched to the screenshot hues
+const IMAGE_COLORS = [
+  '#19FF3B', '#FFDE19', '#19FF7F', '#45FF19', '#FF19E0', 
+  '#FFA519', '#6719FF', '#198FFF', '#FF1922', '#FF8719'
+];
+
+function pickFont() { return FONTS[Math.floor(Math.random() * FONTS.length)]; }
+function pickColor() { return ALL_COLORS[Math.floor(Math.random() * ALL_COLORS.length)]; }
+
+
+
+/* ───────────────────────────────────────────
+   2. PHYSICS ENGINE SETUP (Matter.js)
+─────────────────────────────────────────────*/
+const Engine = Matter.Engine,
+      Render = Matter.Render,
+      Runner = Matter.Runner,
+      MouseConstraint = Matter.MouseConstraint,
+      Mouse = Matter.Mouse,
+      World = Matter.World,
+      Bodies = Matter.Bodies,
+      Composite = Matter.Composite;
+
+const canvas = document.getElementById('matter-canvas');
+const ctx = canvas.getContext('2d');
+
+let width = window.innerWidth;
+let height = window.innerHeight;
+canvas.width = width;
+canvas.height = height;
+
+// Create physics engine
+const engine = Engine.create();
+engine.world.gravity.y = 1.2; // Slightly stronger gravity for satisfying drops
+
+// Boundaries (Floor and Walls)
+// Extended far out to prevent objects escaping
+const wallOptions = { isStatic: true, friction: 0.1, restitution: 0.5 };
+const ground = Bodies.rectangle(width / 2, height + 50, width * 3, 100, wallOptions);
+const leftWall = Bodies.rectangle(-50, height / 2, 100, height * 5, wallOptions);
+const rightWall = Bodies.rectangle(width + 50, height / 2, 100, height * 5, wallOptions);
+const ceiling = Bodies.rectangle(width / 2, -300, width * 3, 100, wallOptions);
+
+Composite.add(engine.world, [ground, leftWall, rightWall, ceiling]);
+
+// Interactive mouse constraint (Allows user to throw balls around)
+const mouse = Mouse.create(canvas);
+const mouseConstraint = MouseConstraint.create(engine, {
+  mouse: mouse,
+  constraint: {
+    stiffness: 0.1,
+    render: { visible: false }
+  }
+});
+Composite.add(engine.world, mouseConstraint);
+
+/* ───────────────────────────────────────────
+   2.5 DEVICE ORIENTATION (GYROSCOPE GRAVITY)
+─────────────────────────────────────────────*/
+let gyroEnabled = false;
+
+function handleOrientation(event) {
+  let gamma = event.gamma; // Left/Right tilt
+  let beta = event.beta;   // Front/Back tilt
+
+  if (gamma === null || beta === null) return;
+
+  // Constrain tilt values
+  let tiltX = Math.max(-90, Math.min(90, gamma));
+  let tiltY = Math.max(-90, Math.min(90, beta));
+
+  // Update Matter.js gravity vector smoothly
+  // Dividing by 30 gives a nice responsive gravity magnitude (max ~3)
+  engine.world.gravity.x = tiltX / 30;
+  engine.world.gravity.y = tiltY / 30;
+}
+
+// Attach to click event for browsers requiring explicit permission (e.g. iOS 13+)
+window.addEventListener('click', () => {
+  if (gyroEnabled) return;
+  
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then(response => {
+        if (response === 'granted') {
+          gyroEnabled = true;
+          window.addEventListener('deviceorientation', handleOrientation);
+        }
+      })
+      .catch(console.error);
+  } else {
+    // Non-iOS 13+ devices
+    gyroEnabled = true;
+    window.addEventListener('deviceorientation', handleOrientation);
+  }
+});
+
+
+/* ───────────────────────────────────────────
+   3. SPAWNING LOGIC (Balls & Letters)
+─────────────────────────────────────────────*/
+const MAX_BODIES = 220; // Number of physical bodies to spawn
+let bodyCount = 0;
+let spawnInterval;
+
+function spawnBody() {
+  if (bodyCount >= MAX_BODIES) {
+    clearInterval(spawnInterval);
+    return;
+  }
+  
+  // Random horizontal spawn across the top
+  const x = Math.random() * (width - 100) + 50;
+  const y = -100 - (Math.random() * 50); 
+  const r = Math.random() * 20 + 35; // Radius between 35 and 55
+  
+  // 25% chance to spawn a LOVE letter instead of an image ball
+  const isLetter = Math.random() < 0.25; 
+  
+  let body;
+  if (isLetter) {
+    // Letter physics body
+    body = Bodies.circle(x, y, r, {
+      restitution: 0.6, // Bounciness
+      friction: 0.05,
+      density: 0.02,
+      label: 'letter'
+    });
+    
+    // Store custom data for the render loop
+    body.custom = {
+      char: ['L','O','V','E'][Math.floor(Math.random() * 4)],
+      font: pickFont(),
+      color: pickColor(),
+      lastChange: Date.now(),
+      changeInterval: 500 + Math.random() * 2000 // Constantly changing
+    };
+  } else {
+    // Image Ball physics body
+    body = Bodies.circle(x, y, r, {
+      restitution: 0.6,
+      friction: 0.05,
+      density: 0.02,
+      label: 'ball'
+    });
+    
+    body.custom = {
+      color: IMAGE_COLORS[Math.floor(Math.random() * IMAGE_COLORS.length)],
+      r: r
+    };
+  }
+  
+  Composite.add(engine.world, body);
+  bodyCount++;
+}
+
+// Spawn bodies progressively for a falling rain effect
+spawnInterval = setInterval(spawnBody, 50);
+
+
+/* ───────────────────────────────────────────
+   4. RUNNER & CUSTOM RENDER LOOP
+─────────────────────────────────────────────*/
+// Start the physics simulation
+const runner = Runner.create();
+Runner.run(runner, engine);
+
+function render() {
+  ctx.clearRect(0, 0, width, height);
+  
+  const bodies = Composite.allBodies(engine.world);
+  
+  for (let body of bodies) {
+    if (body.isStatic) continue; // Skip rendering walls
+    
+    const { position, angle } = body;
+    
+    ctx.save();
+    ctx.translate(position.x, position.y);
+    ctx.rotate(angle);
+    
+    if (body.label === 'ball') {
+      const r = body.custom.r;
+
+      // Plain colored circle with neon glow
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.shadowBlur  = 28;
+      ctx.shadowColor = body.custom.color;
+      ctx.fillStyle   = body.custom.color;
+      ctx.fill();
+      // Bright inner core
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.48, 0, Math.PI * 2);
+      ctx.fillStyle = body.custom.color + 'CC';
+      ctx.shadowBlur = 12;
+      ctx.fill();
+      
+    } else if (body.label === 'letter') {
+      // Dynamic style updating: Change font & color periodically
+      const now = Date.now();
+      if (now - body.custom.lastChange > body.custom.changeInterval) {
+        body.custom.font = pickFont();
+        body.custom.color = pickColor();
+        body.custom.lastChange = now;
+      }
+      
+      const r = body.circleRadius;
+      
+      // Draw the tumbling physical letter
+      ctx.fillStyle = body.custom.color;
+      ctx.font = `${r * 1.8}px ${body.custom.font}`; 
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // Glowing text shadow
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = body.custom.color;
+      
+      // Draw letter centered on its physical body
+      ctx.fillText(body.custom.char, 0, 0);
+    }
+    
+    ctx.restore();
+  }
+  
+  requestAnimationFrame(render);
+}
+// Start custom rendering
+render();
+
+
+/* ───────────────────────────────────────────
+   5. RESIZE HANDLING
+─────────────────────────────────────────────*/
+window.addEventListener('resize', () => {
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = width;
+  canvas.height = height;
+  
+  // Update static bodies positions dynamically
+  Matter.Body.setPosition(ground, { x: width / 2, y: height + 50 });
+  Matter.Body.setPosition(ceiling, { x: width / 2, y: -300 });
+  Matter.Body.setPosition(rightWall, { x: width + 50, y: height / 2 });
+});
+</script>
+</body>
+</html>

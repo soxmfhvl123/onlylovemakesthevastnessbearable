@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>L O V E 2 - The Collision</title>
+
+  <!-- Google Fonts — 18 families loaded -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:wght@400;700;900&family=Space+Mono:wght@400;700&family=Abril+Fatface&family=Righteous&family=Lobster&family=Oswald:wght@300;700&family=Dancing+Script:wght@700&family=Anton&family=Raleway:wght@100;900&family=Cormorant+Garamond:ital,wght@1,700&family=Pacifico&family=Black+Han+Sans&family=Cinzel:wght@900&family=Monoton&family=Bungee&family=Protest+Guerrilla&family=Bruno+Ace+SC&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000;
+      color: #fff;
+      overflow: hidden; /* Prevent body scroll, scrolling is handled in text-container */
+      width: 100vw;
+      height: 100vh;
+      font-family: sans-serif;
+    }
+
+
+
+    /* Container for the repeating LOVE text */
+    #text-container {
+      position: absolute;
+      inset: 0;
+      padding: 3vw;
+      z-index: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      word-break: break-word;
+      line-height: 1.4;
+      /* Hide scrollbar for a seamless aesthetic */
+      scrollbar-width: none; 
+      -ms-overflow-style: none;
+    }
+    #text-container::-webkit-scrollbar {
+      display: none;
+    }
+
+    .type-letter {
+      display: inline-block;
+      font-weight: 900;
+      font-size: clamp(36px, 6vw, 90px);
+      transition: color 0.5s ease;
+      will-change: color;
+    }
+
+
+    /* The canvas for 10 bouncing balls */
+    #balls-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 10;
+      pointer-events: none; /* Allows user to interact/scroll the text below if needed */
+    }
+  </style>
+</head>
+<body>
+
+<div id="text-container"></div>
+<canvas id="balls-canvas"></canvas>
+
+<script>
+/* ───────────────────────────────────────────
+   1. LOVE REPEATING TYPING ANIMATION
+─────────────────────────────────────────────*/
+const FONTS = [
+  "'Bebas Neue', sans-serif", "'Playfair Display', serif", "'Space Mono', monospace",
+  "'Abril Fatface', cursive", "'Righteous', cursive", "'Lobster', cursive",
+  "'Oswald', sans-serif", "'Dancing Script', cursive", "'Anton', sans-serif",
+  "'Raleway', sans-serif", "'Cormorant Garamond', serif", "'Pacifico', cursive",
+  "'Cinzel', serif", "'Monoton', cursive", "'Bungee', cursive",
+  "'Protest Guerrilla', sans-serif", "'Bruno Ace SC', cursive",
+];
+
+const ALL_COLORS = [
+  '#FF2D55','#FF9F0A','#30D158','#0A84FF','#BF5AF2','#FF375F',
+  '#FFD60A','#4ECDC4','#F72585','#4CC9F0','#06FFA5','#FF2979',
+  '#FF6B00','#FF0099','#00FFCC','#B400FF','#FFBE0B','#FB5607',
+  '#FF006E','#8338EC','#00F5D4','#F15BB5','#FEE440','#00BBF9',
+  '#FF4D6D','#C77DFF','#FFD166','#06D6A0','#39FF14','#FF073A',
+  '#0FF0FC','#FF6EC7',
+];
+
+function pickFont() { return FONTS[Math.floor(Math.random() * FONTS.length)]; }
+function pickColor() { return ALL_COLORS[Math.floor(Math.random() * ALL_COLORS.length)]; }
+function glowShadow(color) {
+  return `0 0 10px ${color}88, 0 0 30px ${color}44`;
+}
+
+const textContainer = document.getElementById('text-container');
+const seq = ['L','O','V','E'];
+let charIndex = 0;
+
+function updateLetter(span) {
+  if (!span.parentElement) return; // Stop updating if it was removed from DOM
+  const color = pickColor();
+  span.style.fontFamily = pickFont();
+  span.style.color = color;
+  span.style.textShadow = glowShadow(color);
+  setTimeout(() => updateLetter(span), 700 + Math.random() * 1500);
+}
+
+function typeNext() {
+  const char = seq[charIndex % seq.length];
+  charIndex++;
+
+  const span = document.createElement('span');
+  span.textContent = char;
+  const color = pickColor();
+  span.style.fontFamily = pickFont();
+  span.style.color = color;
+  span.style.textShadow = glowShadow(color);
+  span.className = 'type-letter';
+  textContainer.appendChild(span);
+
+  // Start continuous style changing for this letter
+  setTimeout(() => updateLetter(span), 700 + Math.random() * 1500);
+
+  // If text overflows the container's visible area, reset completely
+  if (textContainer.scrollHeight > textContainer.clientHeight + 10) {
+    textContainer.innerHTML = '';
+  }
+
+  // Typing speed delay
+  setTimeout(typeNext, 70);
+}
+// Start typing loop
+typeNext();
+
+/* ───────────────────────────────────────────
+   2. 10 BOUNCING BALLS WITH IMAGE TEXTURE
+─────────────────────────────────────────────*/
+const canvas = document.getElementById('balls-canvas');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// 10 distinct vibrant colors
+const IMAGE_COLORS = [
+  '#19FF3B', '#FFDE19', '#19FF7F', '#45FF19', '#FF19E0', 
+  '#FFA519', '#6719FF', '#198FFF', '#FF1922', '#FF8719'
+];
+
+class Ball {
+  constructor(index) {
+    this.r = Math.random() * 45 + 55; // Radius between 55 and 100
+    this.m = this.r * this.r; // Mass based on area (for realistic collisions)
+    
+    // Initial position ensuring it spawns inside the canvas boundaries
+    this.x = Math.random() * (canvas.width - this.r * 2) + this.r;
+    this.y = Math.random() * (canvas.height - this.r * 2) + this.r;
+    
+    // Random velocity
+    this.vx = (Math.random() - 0.5) * 14;
+    this.vy = (Math.random() - 0.5) * 14;
+    
+    // Assign exactly one distinct color from the image palette to each ball
+    this.color = IMAGE_COLORS[index % IMAGE_COLORS.length];
+  }
+}
+
+const balls = [];
+for(let i=0; i<10; i++) {
+  balls.push(new Ball(i));
+}
+
+function updateBalls() {
+  // Move balls and bounce off walls
+  for (let b of balls) {
+    b.x += b.vx;
+    b.y += b.vy;
+
+    if (b.x - b.r < 0) { b.x = b.r; b.vx *= -1; }
+    if (b.x + b.r > canvas.width) { b.x = canvas.width - b.r; b.vx *= -1; }
+    if (b.y - b.r < 0) { b.y = b.r; b.vy *= -1; }
+    if (b.y + b.r > canvas.height) { b.y = canvas.height - b.r; b.vy *= -1; }
+  }
+
+  // 2D Elastic Ball-to-Ball Collisions
+  for (let i = 0; i < balls.length; i++) {
+    for (let j = i + 1; j < balls.length; j++) {
+      let b1 = balls[i];
+      let b2 = balls[j];
+      
+      let dx = b2.x - b1.x;
+      let dy = b2.y - b1.y;
+      let dist = Math.hypot(dx, dy);
+      let minDist = b1.r + b2.r;
+      
+      if (dist < minDist) {
+        // Resolve position overlap to prevent balls from sticking
+        let overlap = minDist - dist;
+        let nx = dx / dist;
+        let ny = dy / dist;
+        
+        let totalMass = b1.m + b2.m;
+        let m1Ratio = b2.m / totalMass;
+        let m2Ratio = b1.m / totalMass;
+
+        b1.x -= nx * overlap * m1Ratio;
+        b1.y -= ny * overlap * m1Ratio;
+        b2.x += nx * overlap * m2Ratio;
+        b2.y += ny * overlap * m2Ratio;
+
+        // Calculate collision impulse
+        let dvx = b2.vx - b1.vx;
+        let dvy = b2.vy - b1.vy;
+        let velocityAlongNormal = dvx * nx + dvy * ny;
+
+        // If they are moving apart, don't apply impulse
+        if (velocityAlongNormal > 0) continue;
+
+        let restitution = 1; // 1 = perfectly elastic bounce
+        let jImpulse = -(1 + restitution) * velocityAlongNormal;
+        jImpulse /= (1 / b1.m + 1 / b2.m);
+
+        let impulseX = jImpulse * nx;
+        let impulseY = jImpulse * ny;
+
+        b1.vx -= impulseX / b1.m;
+        b1.vy -= impulseY / b1.m;
+        b2.vx += impulseX / b2.m;
+        b2.vy += impulseY / b2.m;
+      }
+    }
+  }
+}
+
+function drawBalls() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  for(let b of balls) {
+    // Plain colored circle with glow
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.shadowBlur = 30;
+    ctx.shadowColor = b.color;
+    ctx.fillStyle = b.color;
+    ctx.fill();
+    // Inner bright core
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r * 0.55, 0, Math.PI * 2);
+    ctx.fillStyle = b.color + 'CC';
+    ctx.shadowBlur = 15;
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function loop() {
+  updateBalls();
+  drawBalls();
+  requestAnimationFrame(loop);
+}
+// Start the animation loop
+loop();
+
+</script>
+</body>
+</html>

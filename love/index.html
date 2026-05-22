@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>L O V E</title>
+
+  <!-- Google Fonts — 18 families loaded -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:wght@400;700;900&family=Space+Mono:wght@400;700&family=Abril+Fatface&family=Righteous&family=Lobster&family=Oswald:wght@300;700&family=Dancing+Script:wght@700&family=Anton&family=Raleway:wght@100;900&family=Cormorant+Garamond:ital,wght@1,700&family=Pacifico&family=Black+Han+Sans&family=Cinzel:wght@900&family=Monoton&family=Bungee&family=Protest+Guerrilla&family=Bruno+Ace+SC&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+    }
+
+    /* ── Background canvas ── */
+    #bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    /* ── LOVE stage ── */
+    #love-stage {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0px;           /* controlled by JS */
+      user-select: none;
+      filter: drop-shadow(0 0 40px rgba(255,255,255,0.08));
+    }
+
+    .letter {
+      display: inline-block;
+      font-size: min(25vw, 56vh);
+      font-weight: 900;
+      line-height: 1;
+      transition:
+        font-family 0.05s,
+        color 0.5s ease,
+        transform 0.7s cubic-bezier(0.34,1.56,0.64,1),
+        text-shadow 0.5s ease,
+        margin-right 0.7s cubic-bezier(0.34,1.56,0.64,1);
+      will-change: transform, color, margin-right;
+    }
+    /* suppress all transitions on very first paint */
+    .letter.no-transition {
+      transition: none !important;
+    }
+
+  </style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<div id="love-stage">
+  <span class="letter no-transition" id="l" style="color:#FF2D55;font-family:'Bebas Neue',sans-serif;text-shadow:0 0 20px #FF2D5588,0 0 60px #FF2D5544">L</span>
+  <span class="letter no-transition" id="o" style="color:#FF9F0A;font-family:'Playfair Display',serif;text-shadow:0 0 20px #FF9F0A88,0 0 60px #FF9F0A44">O</span>
+  <span class="letter no-transition" id="v" style="color:#BF5AF2;font-family:'Anton',sans-serif;text-shadow:0 0 20px #BF5AF288,0 0 60px #BF5AF244">V</span>
+  <span class="letter no-transition" id="e" style="color:#0FF0FC;font-family:'Bebas Neue',sans-serif;text-shadow:0 0 20px #0FF0FC88,0 0 60px #0FF0FC44">E</span>
+</div>
+
+
+<script>
+/* ───────────────────────────────────────────
+   BACKGROUND — particles + floating chars
+─────────────────────────────────────────────*/
+const canvas = document.getElementById('bg');
+const ctx    = canvas.getContext('2d');
+
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const ASCII = '01アイウエオ∑∆Ω∞≈∫αβγδεζηθλμπρστφχψ♥⚡★░▒▓█▌▐⊕⊗≠≤≥←→↑↓⇒';
+
+// Particles
+const PARTICLE_COUNT = 80;
+const particles = Array.from({ length: PARTICLE_COUNT }, () => ({
+  x: Math.random() * window.innerWidth,
+  y: Math.random() * window.innerHeight,
+  r: Math.random() * 2 + 0.3,
+  vx: (Math.random() - 0.5) * 0.4,
+  vy: (Math.random() - 0.5) * 0.4,
+  alpha: Math.random() * 0.6 + 0.1,
+  color: `hsl(${Math.random()*360},80%,70%)`,
+}));
+
+// Floating chars
+const CHAR_COUNT = 60;
+const floatChars = Array.from({ length: CHAR_COUNT }, () => ({
+  x: Math.random() * window.innerWidth,
+  y: Math.random() * window.innerHeight,
+  char: ASCII[Math.floor(Math.random() * ASCII.length)],
+  size: Math.random() * 14 + 8,
+  speed: Math.random() * 0.5 + 0.15,
+  alpha: Math.random() * 0.35 + 0.05,
+  color: `hsl(${Math.random()*360},70%,60%)`,
+  changeTimer: Math.random() * 120,
+}));
+
+function drawBg() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Pure deep black
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Floating chars
+  floatChars.forEach(fc => {
+    fc.y -= fc.speed;
+    fc.changeTimer--;
+    if (fc.y < -30) {
+      fc.y = canvas.height + 20;
+      fc.x = Math.random() * canvas.width;
+    }
+    if (fc.changeTimer <= 0) {
+      fc.char = ASCII[Math.floor(Math.random() * ASCII.length)];
+      fc.changeTimer = 40 + Math.random() * 100;
+    }
+    ctx.save();
+    ctx.globalAlpha = fc.alpha;
+    ctx.fillStyle = fc.color;
+    ctx.shadowColor = fc.color;
+    ctx.shadowBlur = 18;
+    ctx.font = `${fc.size}px 'Space Mono', monospace`;
+    ctx.fillText(fc.char, fc.x, fc.y);
+    // double-draw to intensify glow
+    ctx.globalAlpha = fc.alpha * 0.5;
+    ctx.fillText(fc.char, fc.x, fc.y);
+    ctx.restore();
+  });
+
+  // Particles
+  particles.forEach(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.x < 0) p.x = canvas.width;
+    if (p.x > canvas.width) p.x = 0;
+    if (p.y < 0) p.y = canvas.height;
+    if (p.y > canvas.height) p.y = 0;
+
+    ctx.save();
+    ctx.globalAlpha = p.alpha;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 6;
+    ctx.fill();
+    ctx.restore();
+  });
+
+  requestAnimationFrame(drawBg);
+}
+drawBg();
+
+
+/* ───────────────────────────────────────────
+   LOVE ANIMATION
+─────────────────────────────────────────────*/
+const FONTS = [
+  "'Bebas Neue', sans-serif",
+  "'Playfair Display', serif",
+  "'Space Mono', monospace",
+  "'Abril Fatface', cursive",
+  "'Righteous', cursive",
+  "'Lobster', cursive",
+  "'Oswald', sans-serif",
+  "'Dancing Script', cursive",
+  "'Anton', sans-serif",
+  "'Raleway', sans-serif",
+  "'Cormorant Garamond', serif",
+  "'Pacifico', cursive",
+  "'Cinzel', serif",
+  "'Monoton', cursive",
+  "'Bungee', cursive",
+  "'Protest Guerrilla', sans-serif",
+  "'Bruno Ace SC', cursive",
+];
+
+const VIBRANT_PALETTES = [
+  // each sub-array = 4 colors for [L,O,V,E]
+  ['#FF2D55','#FF9F0A','#30D158','#0A84FF'],
+  ['#BF5AF2','#FF375F','#FFD60A','#30D158'],
+  ['#FF6B6B','#FFE66D','#4ECDC4','#A78BFA'],
+  ['#F72585','#7209B7','#3A0CA3','#4CC9F0'],
+  ['#06FFA5','#FFE600','#FF2979','#00B4FF'],
+  ['#FF6B00','#FF0099','#00FFCC','#B400FF'],
+  ['#FFBE0B','#FB5607','#FF006E','#8338EC'],
+  ['#00F5D4','#F15BB5','#FEE440','#00BBF9'],
+  ['#FF4D6D','#C77DFF','#FFD166','#06D6A0'],
+  ['#39FF14','#FF073A','#0FF0FC','#FF6EC7'],
+];
+
+function pickFont(exclude = []) {
+  let f;
+  do { f = FONTS[Math.floor(Math.random() * FONTS.length)]; }
+  while (exclude.includes(f));
+  return f;
+}
+
+function pickPalette() {
+  return VIBRANT_PALETTES[Math.floor(Math.random() * VIBRANT_PALETTES.length)];
+}
+
+function randomLetterSpacing() {
+  // Returns px values for the gap between letters
+  // variety: tight (-5px) to very wide (80px)
+  const modes = [
+    () => Math.random() * 8 - 4,        // neutral
+    () => 30 + Math.random() * 60,      // wide
+    () => -8 + Math.random() * 4,       // tight
+    () => 15 + Math.random() * 20,      // medium-wide
+  ];
+  return modes[Math.floor(Math.random() * modes.length)]();
+}
+
+function randomScale() {
+  return 0.78 + Math.random() * 0.46;   // 0.78 – 1.24
+}
+
+function randomTranslate() {
+  return (Math.random() - 0.5) * 30;   // ±15px vertical
+}
+
+function glowShadow(color) {
+  return `0 0 20px ${color}88, 0 0 60px ${color}44, 0 0 120px ${color}22`;
+}
+
+const letters = ['l','o','v','e'].map(id => document.getElementById(id));
+
+// Each letter has its own independent state
+const letterState = letters.map(() => ({
+  prevFont: '',
+  color: '#ffffff',
+}));
+
+// Independent color pools so neighbouring letters stay distinct
+const ALL_COLORS = [
+  '#FF2D55','#FF9F0A','#30D158','#0A84FF','#BF5AF2','#FF375F',
+  '#FFD60A','#4ECDC4','#F72585','#4CC9F0','#06FFA5','#FF2979',
+  '#FF6B00','#FF0099','#00FFCC','#B400FF','#FFBE0B','#FB5607',
+  '#FF006E','#8338EC','#00F5D4','#F15BB5','#FEE440','#00BBF9',
+  '#FF4D6D','#C77DFF','#FFD166','#06D6A0','#39FF14','#FF073A',
+  '#0FF0FC','#FF6EC7',
+];
+
+function pickColor(excludeColors = []) {
+  const pool = ALL_COLORS.filter(c => !excludeColors.includes(c));
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function applyLetterState(index) {
+  const el    = letters[index];
+  const state = letterState[index];
+
+  // Pick font (avoid repeating own last font)
+  const font = pickFont([state.prevFont]);
+  state.prevFont = font;
+
+  // Pick color distinct from neighbours
+  const neighbourColors = [
+    index > 0 ? letterState[index-1].color : null,
+    index < 3 ? letterState[index+1].color : null,
+  ].filter(Boolean);
+  const color = pickColor(neighbourColors);
+  state.color = color;
+
+  const scaleY = randomScale();
+  const ty     = randomTranslate();
+  const gap    = randomLetterSpacing();
+
+  el.style.fontFamily  = font;
+  el.style.color       = color;
+  el.style.textShadow  = glowShadow(color);
+  el.style.transform   = `scaleY(${scaleY}) translateY(${ty}px)`;
+  // Each letter controls the gap to its right
+  if (index < 3) el.style.marginRight = `${gap}px`;
+
+  // Schedule next change for this letter independently (700ms–2200ms)
+  const nextIn = 700 + Math.random() * 1500;
+  setTimeout(() => applyLetterState(index), nextIn);
+}
+
+// Stagger the initial start of each letter
+letters.forEach((_, i) => {
+  setTimeout(() => applyLetterState(i), i * 250);
+});
+
+// Re-enable transitions after first paint
+requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
+    letters.forEach(el => el.classList.remove('no-transition'));
+  });
+});
+</script>
+</body>
+</html>

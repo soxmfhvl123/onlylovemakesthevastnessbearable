@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ONLY LOVE MAKES THE VASTNESS BEARABLE</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:wght@400;700;900&family=Space+Mono:wght@400;700&family=Abril+Fatface&family=Righteous&family=Lobster&family=Oswald:wght@300;700&family=Dancing+Script:wght@700&family=Anton&family=Raleway:wght@100;900&family=Cormorant+Garamond:ital,wght@1,700&family=Pacifico&family=Black+Han+Sans&family=Cinzel:wght@900&family=Monoton&family=Bungee&family=Protest+Guerrilla&family=Bruno+Ace+SC&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html {
+      scroll-snap-type: y mandatory;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: #000;
+      overflow-x: hidden;
+      overflow-y: scroll;
+    }
+
+    #bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ── HERO — full viewport, title centered ── */
+    .hero {
+      position: relative;
+      z-index: 10;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      scroll-snap-align: start;
+    }
+
+    #title-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0px;
+      user-select: none;
+      filter: drop-shadow(0 0 40px rgba(255,255,255,0.06));
+    }
+
+    .title-line {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .letter {
+      display: inline-block;
+      font-weight: 900;
+      font-size: clamp(46px, 7.8vw, 136px);
+      line-height: 0.91;
+      will-change: transform, color;
+    }
+
+    .letter.animate {
+      transition:
+        font-family 0.05s,
+        color 0.5s ease,
+        transform 0.7s cubic-bezier(0.34,1.56,0.64,1),
+        text-shadow 0.5s ease;
+    }
+
+    .letter.space {
+      width: clamp(12px, 1.9vw, 32px);
+    }
+
+    /* ── PROJECTS section ── */
+    .projects {
+      position: relative;
+      z-index: 10;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 24px;
+      scroll-snap-align: start;
+    }
+
+    .links {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .link-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      text-decoration: none;
+      cursor: pointer;
+      user-select: none;
+      transition: filter 0.3s ease;
+    }
+
+    .link-row:hover {
+      filter: drop-shadow(0 0 28px rgba(255,255,255,0.22));
+    }
+
+    .link-letter {
+      display: inline-block;
+      font-weight: 900;
+      font-size: clamp(18px, 3vw, 48px);
+      line-height: 0.95;
+      will-change: transform, color;
+    }
+
+    .link-letter.animate {
+      transition:
+        font-family 0.05s,
+        color 0.5s ease,
+        transform 0.7s cubic-bezier(0.34,1.56,0.64,1),
+        text-shadow 0.5s ease;
+    }
+
+    .link-letter.space {
+      width: clamp(5px, 0.8vw, 13px);
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<!-- HERO: title full viewport -->
+<section class="hero">
+  <div id="title-stage">
+    <div class="title-line" id="line1"></div>
+    <div class="title-line" id="line2"></div>
+    <div class="title-line" id="line3"></div>
+  </div>
+
+</section>
+
+<!-- PROJECTS: below the fold -->
+<section class="projects">
+  <nav class="links" id="links"></nav>
+</section>
+
+<script>
+/* ─────────────────────────────────────────
+   ASSETS
+───────────────────────────────────────── */
+const FONTS = [
+  "'Bebas Neue', sans-serif",
+  "'Playfair Display', serif",
+  "'Space Mono', monospace",
+  "'Abril Fatface', cursive",
+  "'Righteous', cursive",
+  "'Lobster', cursive",
+  "'Oswald', sans-serif",
+  "'Dancing Script', cursive",
+  "'Anton', sans-serif",
+  "'Raleway', sans-serif",
+  "'Cormorant Garamond', serif",
+  "'Pacifico', cursive",
+  "'Cinzel', serif",
+  "'Monoton', cursive",
+  "'Bungee', cursive",
+  "'Protest Guerrilla', sans-serif",
+  "'Bruno Ace SC', cursive",
+];
+
+const ALL_COLORS = [
+  '#FF2D55','#FF9F0A','#30D158','#0A84FF','#BF5AF2','#FF375F',
+  '#FFD60A','#4ECDC4','#F72585','#4CC9F0','#06FFA5','#FF2979',
+  '#FF6B00','#FF0099','#00FFCC','#B400FF','#FFBE0B','#FB5607',
+  '#FF006E','#8338EC','#00F5D4','#F15BB5','#FEE440','#00BBF9',
+  '#FF4D6D','#C77DFF','#FFD166','#06D6A0','#39FF14','#FF073A',
+  '#0FF0FC','#FF6EC7',
+];
+
+function pickFont(exclude = []) {
+  let f;
+  do { f = FONTS[Math.floor(Math.random() * FONTS.length)]; }
+  while (exclude.includes(f));
+  return f;
+}
+
+function pickColor(exclude = []) {
+  const pool = ALL_COLORS.filter(c => !exclude.includes(c));
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function glowShadow(color) {
+  return `0 0 20px ${color}88, 0 0 60px ${color}44, 0 0 120px ${color}22`;
+}
+
+function randomScale()     { return 0.80 + Math.random() * 0.44; }
+function randomTranslate() { return (Math.random() - 0.5) * 26; }
+
+/* ─────────────────────────────────────────
+   BACKGROUND
+───────────────────────────────────────── */
+const canvas = document.getElementById('bg');
+const bgCtx  = canvas.getContext('2d');
+
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const ASCII = 'LOVE♥01アイウエオ∑∆Ω∞≈αβγδ⚡★░▒▓';
+
+const particles = Array.from({ length: 70 }, () => ({
+  x: Math.random() * window.innerWidth,
+  y: Math.random() * window.innerHeight,
+  r: Math.random() * 1.8 + 0.3,
+  vx: (Math.random() - 0.5) * 0.4,
+  vy: (Math.random() - 0.5) * 0.4,
+  alpha: Math.random() * 0.5 + 0.1,
+  color: ALL_COLORS[Math.floor(Math.random() * ALL_COLORS.length)],
+}));
+
+const floatChars = Array.from({ length: 55 }, () => ({
+  x: Math.random() * window.innerWidth,
+  y: Math.random() * window.innerHeight,
+  char: ASCII[Math.floor(Math.random() * ASCII.length)],
+  size: Math.random() * 14 + 8,
+  speed: Math.random() * 0.4 + 0.1,
+  alpha: Math.random() * 0.28 + 0.04,
+  color: ALL_COLORS[Math.floor(Math.random() * ALL_COLORS.length)],
+  timer: Math.random() * 120,
+}));
+
+function drawBg() {
+  bgCtx.clearRect(0, 0, canvas.width, canvas.height);
+  bgCtx.fillStyle = '#000';
+  bgCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+  floatChars.forEach(fc => {
+    fc.y -= fc.speed;
+    fc.timer--;
+    if (fc.y < -30)    { fc.y = canvas.height + 20; fc.x = Math.random() * canvas.width; }
+    if (fc.timer <= 0) { fc.char = ASCII[Math.floor(Math.random() * ASCII.length)]; fc.timer = 40 + Math.random() * 100; }
+    bgCtx.save();
+    bgCtx.globalAlpha = fc.alpha;
+    bgCtx.fillStyle   = fc.color;
+    bgCtx.shadowColor = fc.color;
+    bgCtx.shadowBlur  = 14;
+    bgCtx.font        = `${fc.size}px 'Space Mono', monospace`;
+    bgCtx.fillText(fc.char, fc.x, fc.y);
+    bgCtx.globalAlpha = fc.alpha * 0.5;
+    bgCtx.fillText(fc.char, fc.x, fc.y);
+    bgCtx.restore();
+  });
+
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) p.x = canvas.width;
+    if (p.x > canvas.width)  p.x = 0;
+    if (p.y < 0) p.y = canvas.height;
+    if (p.y > canvas.height) p.y = 0;
+    bgCtx.save();
+    bgCtx.globalAlpha = p.alpha;
+    bgCtx.beginPath();
+    bgCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    bgCtx.fillStyle   = p.color;
+    bgCtx.shadowColor = p.color;
+    bgCtx.shadowBlur  = 6;
+    bgCtx.fill();
+    bgCtx.restore();
+  });
+
+  requestAnimationFrame(drawBg);
+}
+drawBg();
+
+/* ─────────────────────────────────────────
+   BUILD SPANS — style applied before DOM insert
+───────────────────────────────────────── */
+function buildLetterSpans(text, container, className) {
+  const spans  = [];
+  const states = [];
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+
+    if (ch === ' ') {
+      const sp = document.createElement('span');
+      sp.className   = className + ' space';
+      sp.textContent = '\u00A0';
+      container.appendChild(sp);
+      spans.push(null);
+      states.push(null);
+      continue;
+    }
+
+    const span       = document.createElement('span');
+    span.textContent = ch;
+    span.className   = className; // no transition yet
+
+    // Apply random style BEFORE appending → first paint is already styled
+    const initFont  = pickFont();
+    const initColor = pickColor();
+    span.style.fontFamily = initFont;
+    span.style.color      = initColor;
+    span.style.textShadow = glowShadow(initColor);
+    span.style.transform  = `scaleY(${randomScale()}) translateY(${randomTranslate()}px)`;
+
+    container.appendChild(span);
+    spans.push(span);
+    states.push({ prevFont: initFont, color: initColor });
+  }
+
+  return { spans, states };
+}
+
+/* ─────────────────────────────────────────
+   CYCLING ANIMATION
+───────────────────────────────────────── */
+function animateLetter(spans, states, index) {
+  const span  = spans[index];
+  const state = states[index];
+  if (!span || !state) return;
+
+  const font = pickFont([state.prevFont]);
+  state.prevFont = font;
+
+  const nbColors = [
+    index > 0              && states[index - 1] ? states[index - 1].color : null,
+    index < spans.length-1 && states[index + 1] ? states[index + 1].color : null,
+  ].filter(Boolean);
+  const color = pickColor(nbColors);
+  state.color = color;
+
+  span.style.fontFamily = font;
+  span.style.color      = color;
+  span.style.textShadow = glowShadow(color);
+  span.style.transform  = `scaleY(${randomScale()}) translateY(${randomTranslate()}px)`;
+
+  setTimeout(() => animateLetter(spans, states, index), 700 + Math.random() * 1500);
+}
+
+/* ─────────────────────────────────────────
+   BUILD TITLE — 3 lines
+───────────────────────────────────────── */
+const TITLE_LINES = ['ONLY LOVE MAKES', 'THE VASTNESS', 'BEARABLE'];
+const allTitleSpans  = [];
+const allTitleStates = [];
+
+TITLE_LINES.forEach((line, li) => {
+  const container = document.getElementById(`line${li + 1}`);
+  const { spans, states } = buildLetterSpans(line, container, 'letter');
+  allTitleSpans.push(...spans);
+  allTitleStates.push(...states);
+});
+
+/* ─────────────────────────────────────────
+   BUILD PROJECT LINKS
+───────────────────────────────────────── */
+const PROJECTS = [
+  { href: '../love/index.html',  label: 'LOVE' },
+  { href: '../love2/index.html', label: 'THE COLLISION' },
+  { href: '../love3/index.html', label: 'THE GRAVITY BALL PIT' },
+  { href: '../love4/index.html', label: 'FLOATING AND TRAIL' },
+  { href: '../love5/index.html', label: 'THE VASTNESS' },
+  { href: '../love6/index.html', label: 'FOUNTAIN' },
+];
+
+const linksEl        = document.getElementById('links');
+const linkSpanGroups = [];
+
+PROJECTS.forEach(proj => {
+  const a     = document.createElement('a');
+  a.href      = proj.href;
+  a.className = 'link-row';
+  const { spans, states } = buildLetterSpans(proj.label, a, 'link-letter');
+  linksEl.appendChild(a);
+  linkSpanGroups.push({ spans, states });
+});
+
+/* ─────────────────────────────────────────
+   START — enable transitions THEN kick off
+   ALL letters simultaneously
+───────────────────────────────────────── */
+requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
+
+    // Enable transitions now (initial state already painted)
+    document.querySelectorAll('.letter').forEach(el => el.classList.add('animate'));
+    document.querySelectorAll('.link-letter').forEach(el => el.classList.add('animate'));
+
+    // ★ Fire ALL letter cycles at once — tiny random jitter (0–120ms) only
+    allTitleSpans.forEach((span, i) => {
+      if (!span) return;
+      setTimeout(() => animateLetter(allTitleSpans, allTitleStates, i), Math.random() * 120);
+    });
+
+    linkSpanGroups.forEach(({ spans, states }) => {
+      spans.forEach((span, i) => {
+        if (!span) return;
+        setTimeout(() => animateLetter(spans, states, i), Math.random() * 120);
+      });
+    });
+
+  });
+});
+
+
+</script>
+</body>
+</html>

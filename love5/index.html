@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>L O V E 5 - The Vastness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Google Fonts — 18 families loaded for dynamic typographic effects -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:wght@400;700;900&family=Space+Mono:wght@400;700&family=Abril+Fatface&family=Righteous&family=Lobster&family=Oswald:wght@300;700&family=Dancing+Script:wght@700&family=Anton&family=Raleway:wght@100;900&family=Cormorant+Garamond:ital,wght@1,700&family=Pacifico&family=Black+Han+Sans&family=Cinzel:wght@900&family=Monoton&family=Bungee&family=Protest+Guerrilla&family=Bruno+Ace+SC&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #000;
+      color: #fff;
+      font-family: sans-serif;
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding: 4vw;
+      min-height: 100vh;
+      cursor: text; /* Suggests typing interaction */
+    }
+
+    #text-container {
+      white-space: pre-wrap; /* Preserves spaces and wraps text naturally */
+      word-break: break-word;
+      font-size: clamp(36px, 6vw, 100px);
+      line-height: 1.1;
+    }
+
+    .char {
+      display: inline-block;
+      font-weight: 900;
+      transition: color 0.4s ease, text-shadow 0.4s ease;
+      will-change: color, text-shadow, font-family;
+    }
+
+    /* Highly visible neon blinking block cursor */
+    #cursor {
+      display: inline-block;
+      width: 0.5em;
+      height: 1.1em;
+      background: #FF2D55; /* bright neon pink */
+      vertical-align: text-bottom;
+      animation: cursor-blink 0.8s step-end infinite;
+      box-shadow: 0 0 20px #FF2D55, 0 0 40px #FF2D55, 0 0 60px #FF2D55;
+      margin-left: 8px;
+    }
+    
+    @keyframes cursor-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="text-container"><span id="cursor"></span></div>
+
+<script>
+/* ───────────────────────────────────────────
+   1. ASSETS & PALETTES
+─────────────────────────────────────────────*/
+const FONTS = [
+  "'Bebas Neue', sans-serif", "'Playfair Display', serif", "'Space Mono', monospace",
+  "'Abril Fatface', cursive", "'Righteous', cursive", "'Lobster', cursive",
+  "'Oswald', sans-serif", "'Dancing Script', cursive", "'Anton', sans-serif",
+  "'Raleway', sans-serif", "'Cormorant Garamond', serif", "'Pacifico', cursive",
+  "'Cinzel', serif", "'Monoton', cursive", "'Bungee', cursive",
+  "'Protest Guerrilla', sans-serif", "'Bruno Ace SC', cursive",
+];
+
+const ALL_COLORS = [
+  '#FF2D55','#FF9F0A','#30D158','#0A84FF','#BF5AF2','#FF375F',
+  '#FFD60A','#4ECDC4','#F72585','#4CC9F0','#06FFA5','#FF2979',
+  '#FF6B00','#FF0099','#00FFCC','#B400FF','#FFBE0B','#FB5607',
+  '#FF006E','#8338EC','#00F5D4','#F15BB5','#FEE440','#00BBF9',
+  '#FF4D6D','#C77DFF','#FFD166','#06D6A0','#39FF14','#FF073A',
+  '#0FF0FC','#FF6EC7',
+];
+
+function pickFont() { return FONTS[Math.floor(Math.random() * FONTS.length)]; }
+function pickColor() { return ALL_COLORS[Math.floor(Math.random() * ALL_COLORS.length)]; }
+function glowShadow(color) {
+  return `0 0 10px ${color}88, 0 0 30px ${color}44`;
+}
+
+/* ───────────────────────────────────────────
+   2. DOM ELEMENTS & INITIALIZATION
+─────────────────────────────────────────────*/
+const container = document.getElementById('text-container');
+const cursor = document.getElementById('cursor');
+
+const INITIAL_TEXT = "ONLY LOVE MAKES THE VASTNESS BEARABLE. DEFINE AND SPREAD YOUR LOVE. ";
+
+// Hidden input to capture mobile keyboard typing
+const hiddenInput = document.createElement('input');
+hiddenInput.type = 'text';
+hiddenInput.style.position = 'absolute';
+hiddenInput.style.opacity = '0';
+hiddenInput.style.pointerEvents = 'none';
+document.body.appendChild(hiddenInput);
+
+// Focus hidden input when clicking anywhere on the screen
+document.body.addEventListener('click', () => {
+  hiddenInput.focus();
+});
+
+// Focus initially
+window.addEventListener('load', () => hiddenInput.focus());
+
+// Recursive animation function for each character
+function updateLetter(span) {
+  if (!span.isConnected) return; // Stop if the character was deleted (backspaced)
+  
+  const color = pickColor();
+  span.style.fontFamily = pickFont();
+  span.style.color = color;
+  span.style.textShadow = glowShadow(color);
+  
+  setTimeout(() => updateLetter(span), 1100 + Math.random() * 2200);
+}
+
+// Function to add a character to the screen
+function addChar(charStr, isInitial = false) {
+  const span = document.createElement('span');
+  span.className = charStr === '\n' ? 'newline' : 'char';
+  span.textContent = charStr;
+  
+  // Only apply colors and fonts to actual printable letters/symbols, not spaces
+  if (charStr !== '\n' && charStr !== ' ') {
+    const color = pickColor();
+    span.style.fontFamily = pickFont();
+    span.style.color = color;
+    span.style.textShadow = glowShadow(color);
+  }
+  
+  // Mark the initial text so it can't be deleted
+  if (isInitial) {
+    span.dataset.initial = "true";
+  }
+  
+  container.insertBefore(span, cursor);
+  
+  // Start animation loop for actual characters
+  if (charStr !== '\n' && charStr !== ' ') {
+    setTimeout(() => updateLetter(span), 1100 + Math.random() * 2200);
+  }
+  
+  // Scroll down if typing exceeds screen height
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+// Write the starting text on load
+for (let char of INITIAL_TEXT) {
+  addChar(char, true);
+}
+
+/* ───────────────────────────────────────────
+   3. TYPING INTERACTION
+─────────────────────────────────────────────*/
+// Handle desktop keyboard
+window.addEventListener('keydown', (e) => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  
+  if (e.key === 'Backspace') {
+    e.preventDefault();
+    deleteLastChar();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    addChar('\n');
+  } else if (e.key.length === 1) { // Printable characters
+    e.preventDefault();
+    addChar(e.key);
+  }
+});
+
+// Handle mobile keyboard via hidden input
+hiddenInput.addEventListener('input', (e) => {
+  const val = hiddenInput.value;
+  if (val.length > 0) {
+    // Add all newly typed chars
+    for (let char of val) {
+      addChar(char);
+    }
+    hiddenInput.value = ''; // Reset input after capture
+  }
+});
+
+// Fallback for mobile backspace on empty input
+hiddenInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Backspace' && hiddenInput.value === '') {
+    deleteLastChar();
+  }
+});
+
+function deleteLastChar() {
+  const elements = container.querySelectorAll('.char, .newline');
+  if (elements.length > 0) {
+    const lastElement = elements[elements.length - 1];
+    // Only allow deletion if it's NOT part of the initial text
+    if (lastElement.dataset.initial !== "true") {
+      lastElement.remove();
+    }
+  }
+}
+
+</script>
+</body>
+</html>
