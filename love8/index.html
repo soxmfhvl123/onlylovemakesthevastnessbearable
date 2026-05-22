@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>L O V E 8 - Wind</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+  <!-- Google Fonts — 18 families loaded for dynamic typographic effects -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:wght@400;700;900&family=Space+Mono:wght@400;700&family=Abril+Fatface&family=Righteous&family=Lobster&family=Oswald:wght@300;700&family=Dancing+Script:wght@700&family=Anton&family=Raleway:wght@100;900&family=Cormorant+Garamond:ital,wght@1,700&family=Pacifico&family=Black+Han+Sans&family=Cinzel:wght@900&family=Monoton&family=Bungee&family=Protest+Guerrilla&family=Bruno+Ace+SC&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #000;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      font-family: 'Space Mono', monospace;
+      touch-action: none;
+      user-select: none;
+      color: #fff;
+    }
+
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<script>
+/* ───────────────────────────────────────────
+   1. ASSETS & PALETTES
+   ─────────────────────────────────────────── */
+const FONTS = [
+  "'Bebas Neue', sans-serif", "'Playfair Display', serif", "'Space Mono', monospace",
+  "'Abril Fatface', cursive", "'Righteous', cursive", "'Lobster', cursive",
+  "'Oswald', sans-serif", "'Dancing Script', cursive", "'Anton', sans-serif",
+  "'Raleway', sans-serif", "'Cormorant Garamond', serif", "'Pacifico', cursive",
+  "'Cinzel', serif", "'Monoton', cursive", "'Bungee', cursive",
+  "'Protest Guerrilla', sans-serif", "'Bruno Ace SC', cursive",
+];
+
+const ALL_COLORS = [
+  '#FF2D55','#FF9F0A','#30D158','#0A84FF','#BF5AF2','#FF375F',
+  '#FFD60A','#4ECDC4','#F72585','#4CC9F0','#06FFA5','#FF2979',
+  '#FF6B00','#FF0099','#00FFCC','#B400FF','#FFBE0B','#FB5607',
+  '#FF006E','#8338EC','#00F5D4','#F15BB5','#FEE440','#00BBF9',
+  '#FF4D6D','#C77DFF','#FFD166','#06D6A0','#39FF14','#FF073A',
+  '#0FF0FC','#FF6EC7',
+];
+
+const BALL_COLORS = [
+  '#19FF3B', '#FFDE19', '#19FF7F', '#45FF19', '#FF19E0', 
+  '#FFA519', '#6719FF', '#198FFF', '#FF1922', '#FF8719',
+  '#0FF0FC', '#06FFA5', '#B400FF'
+];
+
+function pickFont() { return FONTS[Math.floor(Math.random() * FONTS.length)]; }
+function pickColor() { return ALL_COLORS[Math.floor(Math.random() * ALL_COLORS.length)]; }
+function pickBallColor() { return BALL_COLORS[Math.floor(Math.random() * BALL_COLORS.length)]; }
+
+/* ───────────────────────────────────────────
+   2. CANVAS & INTERACTION SETUP
+   ─────────────────────────────────────────── */
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let width = window.innerWidth;
+let height = window.innerHeight;
+canvas.width = width;
+canvas.height = height;
+
+window.addEventListener('resize', () => {
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = width;
+  canvas.height = height;
+});
+
+// Interactive state
+let mouse = { x: -1000, y: -1000, vx: 0, vy: 0 };
+let lastMouse = { x: -1000, y: -1000 };
+let mouseMoving = false;
+let mouseActive = false;
+let moveTimeout;
+
+function updateMouseVelocity(clientX, clientY) {
+  mouseActive = true;
+  mouse.x = clientX;
+  mouse.y = clientY;
+
+  if (lastMouse.x !== -1000) {
+    // Calculate and smooth mouse speed/velocity
+    mouse.vx = (mouse.x - lastMouse.x) * 0.7 + mouse.vx * 0.3;
+    mouse.vy = (mouse.y - lastMouse.y) * 0.7 + mouse.vy * 0.3;
+  }
+  
+  lastMouse.x = mouse.x;
+  lastMouse.y = mouse.y;
+
+  mouseMoving = true;
+  clearTimeout(moveTimeout);
+  moveTimeout = setTimeout(() => {
+    mouseMoving = false;
+  }, 100);
+}
+
+window.addEventListener('mousemove', (e) => {
+  updateMouseVelocity(e.clientX, e.clientY);
+});
+
+window.addEventListener('mouseleave', () => {
+  mouse.x = -1000;
+  mouse.y = -1000;
+  mouse.vx = 0;
+  mouse.vy = 0;
+  lastMouse.x = -1000;
+  lastMouse.y = -1000;
+  mouseMoving = false;
+  mouseActive = false;
+});
+
+// Mobile Touch Support
+window.addEventListener('touchstart', (e) => {
+  if (e.touches[0]) {
+    lastMouse.x = e.touches[0].clientX;
+    lastMouse.y = e.touches[0].clientY;
+    updateMouseVelocity(e.touches[0].clientX, e.touches[0].clientY);
+  }
+});
+
+window.addEventListener('touchmove', (e) => {
+  if (e.touches[0]) {
+    updateMouseVelocity(e.touches[0].clientX, e.touches[0].clientY);
+  }
+});
+
+window.addEventListener('touchend', () => {
+  mouse.x = -1000;
+  mouse.y = -1000;
+  mouse.vx = 0;
+  mouse.vy = 0;
+  lastMouse.x = -1000;
+  lastMouse.y = -1000;
+  mouseMoving = false;
+  mouseActive = false;
+});
+
+/* ───────────────────────────────────────────
+   3. BACKGROUND SPACE PARTICLES (STARDUST)
+   ─────────────────────────────────────────── */
+const starCount = 45;
+const stars = [];
+for (let i = 0; i < starCount; i++) {
+  stars.push({
+    x: Math.random() * width,
+    y: Math.random() * height,
+    size: Math.random() * 1.5 + 0.3,
+    color: pickColor(),
+    speedFactor: Math.random() * 0.12 + 0.03
+  });
+}
+
+function updateAndDrawBackgroundStars(windForceX, windForceY) {
+  for (let s of stars) {
+    // Background stardust drifts slowly with the wind
+    s.x += windForceX * s.speedFactor * 1.5;
+    s.y += windForceY * s.speedFactor * 1.5;
+
+    // Wrap-around boundaries
+    if (s.x < -10) s.x = width + 10;
+    if (s.x > width + 10) s.x = -10;
+    if (s.y < -10) s.y = height + 10;
+    if (s.y > height + 10) s.y = -10;
+
+    // Draw stardust
+    ctx.save();
+    ctx.fillStyle = s.color;
+    ctx.globalAlpha = 0.35;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+/* ───────────────────────────────────────────
+   4. WIND FLOW FIELD (PERLIN-LIKE SINE/COSINESwirls)
+   ─────────────────────────────────────────── */
+function getWindForce(x, y, time) {
+  const scale = 0.0014;
+  const t = time * 0.0004;
+
+  // Swirling wave flow biased completely rightwards to prevent backward flow stalling
+  // Wave angle variation restricted between -72 and +72 degrees (max 0.4 * PI)
+  const angle1 = Math.sin(x * scale + t) * Math.cos(y * scale - t) * Math.PI * 0.28;
+  const angle2 = Math.cos(x * scale * 2.1 - t * 0.8) * Math.sin(y * scale * 1.9 + t * 0.6) * Math.PI * 0.12;
+  const angle = angle1 + angle2; // Organic wave flows centered around 0 (directly rightward)
+
+  const strength = 0.85 + 0.3 * Math.sin(x * 0.0008 - y * 0.0008 + t * 0.2);
+
+  return {
+    x: Math.cos(angle) * strength,
+    y: Math.sin(angle) * strength
+  };
+}
+
+/* ───────────────────────────────────────────
+   5. DYNAMIC FLOW PARTICLES (DATA SCULPTURE)
+   ─────────────────────────────────────────── */
+const particles = [];
+const MAX_PARTICLES = 360; // Increased particle limit for a richer screen representation
+
+class Particle {
+  constructor(x, y, type = null) {
+    this.x = x;
+    this.y = y;
+    this.vx = (Math.random() - 0.5) * 1;
+    this.vy = (Math.random() - 0.5) * 1;
+    
+    // 79% chance for light Alphabet, 21% for heavy Ball (ball count increased 1.5x)
+    this.type = type || (Math.random() < 0.21 ? 'ball' : 'alphabet');
+    
+    if (this.type === 'ball') {
+      // Heavy Tint Ball - Scaled up significantly
+      this.radius = Math.random() * 8 + 24; // 24px - 32px radius (very bold!)
+      this.mass = 8.5 + Math.random() * 2.0; // Slightly heavier mass to match
+      this.color = pickBallColor();
+      this.inVortex = false;
+    } else {
+      // Light Shimmering Alphabet - Scaled up significantly
+      this.radius = Math.random() * 6 + 22; // 22px - 28px bounding radius (48px - 60px font size)
+      this.mass = 0.70 + Math.random() * 0.20; // Extremely light, highly responsive to wind
+      this.color = pickColor();
+      this.char = ['L', 'O', 'V', 'E'][Math.floor(Math.random() * 4)];
+      this.font = pickFont();
+      
+      this.angle = Math.random() * Math.PI * 2;
+      this.spinSpeed = (Math.random() - 0.5) * 0.015; // Slow, graceful rotation
+      this.lastFontUpdate = Date.now() - Math.random() * 1000;
+      this.fontUpdateInterval = 700 + Math.random() * 900; // 0.7s to 1.6s interval (like home page)
+      this.inVortex = false;
+    }
+  }
+
+  update(now, mouseSpeed) {
+    // 1. Wind Force
+    const wind = getWindForce(this.x, this.y, now);
+    this.vx += wind.x / this.mass;
+    this.vy += wind.y / this.mass;
+
+    // 2. Mouse Vortex & Evading Force
+    this.inVortex = false;
+    if (mouseActive) {
+      const dx = this.x - mouse.x;
+      const dy = this.y - mouse.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const vortexRadius = 460; // Doubled vortex size from 230 to 460!
+
+      if (dist < vortexRadius) {
+        this.inVortex = true;
+
+        // Dynamic orbital velocity based on mouse speed (whirlwind)
+        const orbitSpeed = 4.0 + mouseSpeed * 0.45;
+        // Tangential orbit directions (-dy, dx)
+        const orbitVx = (-dy / (dist || 1)) * orbitSpeed;
+        const orbitVy = (dx / (dist || 1)) * orbitSpeed;
+
+        // Inward spiral pull to draw captured particles into the vortex center
+        const pullSpeed = 1.1;
+        const pullVx = (-dx / (dist || 1)) * pullSpeed;
+        const pullVy = (-dy / (dist || 1)) * pullSpeed;
+
+        // Radial proximity factor (0 at boundary, 1 at cursor center)
+        const factor = (vortexRadius - dist) / vortexRadius;
+
+        // Viscous orbital blending strength (dependent on particle mass!)
+        // Light mass (alphabets, ~0.8) -> high blend (easily trapped/guided into orbit)
+        // Heavy mass (balls, ~8.0) -> extremely low blend (resists vortex direction, slices through)
+        const captureStrength = 0.52 / this.mass; 
+        const blend = Math.min(captureStrength * Math.pow(factor, 1.2), 0.85);
+
+        // Transition velocity smoothly into pure orbital flow
+        this.vx = this.vx * (1 - blend) + (orbitVx + pullVx) * blend;
+        this.vy = this.vy * (1 - blend) + (orbitVy + pullVy) * blend;
+
+        // Mouse Evading/Repulsion Force when hovered very close (within 180px)
+        const evadeRadius = 180; // Scaled up to match the larger vortex
+        if (dist < evadeRadius) {
+          const force = (evadeRadius - dist) / evadeRadius; // 0 to 1
+          const push = force * force * 1.5; // premium exponential evasion force
+          this.vx += (dx / (dist || 1)) * push;
+          this.vy += (dy / (dist || 1)) * push;
+        }
+
+        if (this.type === 'alphabet') {
+          // Slow, fluid rotation when caught in the vortex instead of rapid spinning
+          this.angle += (0.01 + factor * 0.03);
+        }
+      }
+    }
+
+    // 3. Update Velocities and Apply Friction/Drag
+    this.vx *= 0.96;
+    this.vy *= 0.96;
+    this.x += this.vx;
+    this.y += this.vy;
+
+    // 4. Default Alphabet Spinning & Homepage-style Font/Color Shimmering
+    if (this.type === 'alphabet') {
+      if (!this.inVortex) {
+        this.angle += this.spinSpeed;
+      }
+
+      // Shimmers font-family and neon color periodically just like the home page,
+      // while keeping the letter character ('L', 'O', 'V', 'E') static to maintain a premium feel.
+      if (now - this.lastFontUpdate > this.fontUpdateInterval) {
+        this.font = pickFont();
+        this.color = pickColor();
+        this.lastFontUpdate = now;
+      }
+    }
+  }
+
+  isOutOfBounds() {
+    const margin = 50; // Grace buffer
+    return (
+      this.x < -margin ||
+      this.x > width + margin ||
+      this.y < -margin ||
+      this.y > height + margin
+    );
+  }
+
+  draw() {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    if (this.type === 'ball') {
+      // heavy ball: clean, crisp glowing circle matching love3
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+      ctx.shadowBlur = this.inVortex ? 28 : 16;
+      ctx.shadowColor = this.color;
+      ctx.fillStyle = this.color;
+      ctx.fill();
+
+      // Core highlighting sphere - disable shadowBlur to avoid overexposure
+      ctx.shadowBlur = 0;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius * 0.46, 0, Math.PI * 2);
+      ctx.fillStyle = this.color + 'CC';
+      ctx.fill();
+
+    } else {
+      // Light alphabet: Shimmering tumbling letters
+      ctx.rotate(this.angle);
+      
+      const fontSize = Math.round(this.radius * 1.9);
+      ctx.font = `${fontSize}px ${this.font}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      ctx.fillStyle = this.color;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = this.inVortex ? 24 : 12;
+      
+      // Draw standard single text fill to keep it clean and sharp
+      ctx.fillText(this.char, 0, 0);
+    }
+    ctx.restore();
+  }
+}
+
+// 1. Initial screen fill with particles so it looks alive instantly
+const initialCount = 130;
+for (let i = 0; i < initialCount; i++) {
+  particles.push(new Particle(Math.random() * width, Math.random() * height));
+}
+
+// 2. Continuous replenishment spawning at windward edges
+function spawnNewParticles() {
+  if (particles.length >= MAX_PARTICLES) return;
+
+  const spawnCount = Math.min(3, MAX_PARTICLES - particles.length);
+  for (let i = 0; i < spawnCount; i++) {
+    let spawnX, spawnY;
+    let pushVx = 0;
+    let pushVy = 0;
+    
+    // Choose spawn edge based on wind blowing rightward
+    // 55% spawn on Left border, 35% spawn on Top border, 10% other borders
+    const rand = Math.random();
+    if (rand < 0.55) {
+      // Spread out spawn depth off-screen so particles don't spawn on top of each other
+      spawnX = -30 - Math.random() * 150;
+      spawnY = Math.random() * height;
+      // Strong rightward initial push to flow quickly onto the screen
+      pushVx = Math.random() * 3.0 + 3.0;
+      pushVy = (Math.random() - 0.5) * 1.5;
+    } else if (rand < 0.90) {
+      spawnX = Math.random() * width;
+      spawnY = -30 - Math.random() * 150;
+      // Strong downward initial push
+      pushVx = (Math.random() - 0.5) * 1.5;
+      pushVy = Math.random() * 3.0 + 3.0;
+    } else {
+      // Random bottom/right edge
+      if (Math.random() < 0.5) {
+        spawnX = width + 30;
+        spawnY = Math.random() * height;
+      } else {
+        spawnX = Math.random() * width;
+        spawnY = height + 30;
+      }
+    }
+
+    const p = new Particle(spawnX, spawnY);
+    if (pushVx !== 0 || pushVy !== 0) {
+      p.vx = pushVx;
+      p.vy = pushVy;
+    }
+    
+    particles.push(p);
+  }
+}
+
+/* ───────────────────────────────────────────
+   6. HIGH-PERFORMANCE MUTUAL COLLISION SOLVER
+   ─────────────────────────────────────────── */
+function resolveCollisions() {
+  const len = particles.length;
+  for (let i = 0; i < len; i++) {
+    const p1 = particles[i];
+    for (let j = i + 1; j < len; j++) {
+      const p2 = particles[j];
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      
+      const minDist = p1.radius + p2.radius;
+      
+      // Axis-Aligned Bounding Box (AABB) pruning phase to bypass expensive math
+      if (Math.abs(dx) > minDist || Math.abs(dy) > minDist) continue;
+      
+      const distSq = dx * dx + dy * dy;
+      const minDistSq = minDist * minDist;
+      
+      if (distSq < minDistSq && distSq > 0.01) {
+        const dist = Math.sqrt(distSq);
+        const nx = dx / dist;
+        const ny = dy / dist;
+        
+        // 1. Position Overlap Separation (Weighted by inverse mass)
+        const overlap = minDist - dist;
+        const totalMass = p1.mass + p2.mass;
+        const ratio1 = p2.mass / totalMass; // higher mass p2 pushes p1 more
+        const ratio2 = p1.mass / totalMass; // higher mass p1 pushes p2 more
+        
+        p1.x -= nx * overlap * ratio1;
+        p1.y -= ny * overlap * ratio1;
+        p2.x += nx * overlap * ratio2;
+        p2.y += ny * overlap * ratio2;
+        
+        // 2. Elastic Collision Impulse Velocity Updates
+        const rvx = p2.vx - p1.vx;
+        const rvy = p2.vy - p1.vy;
+        const velAlongNormal = rvx * nx + rvy * ny;
+        
+        // Only resolve if they are moving towards each other
+        if (velAlongNormal < 0) {
+          const restitution = 0.65; // Satisfying premium bounce
+          let impulse = -(1 + restitution) * velAlongNormal;
+          impulse /= (1 / p1.mass + 1 / p2.mass);
+          
+          p1.vx -= (nx * impulse) / p1.mass;
+          p1.vy -= (ny * impulse) / p1.mass;
+          p2.vx += (nx * impulse) / p2.mass;
+          p2.vy += (ny * impulse) / p2.mass;
+        }
+      }
+    }
+  }
+}
+
+/* ───────────────────────────────────────────
+   7. CORE SIMULATION LOOP (60FPS TRAIL RENDERING)
+   ─────────────────────────────────────────── */
+function animate() {
+  const now = Date.now();
+
+  // Clear screen and draw solid black background to keep shapes perfectly sharp and crisp!
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, width, height);
+
+  // Compute current general wind vector (for background drifting)
+  const centerWind = getWindForce(width / 2, height / 2, now);
+  updateAndDrawBackgroundStars(centerWind.x, centerWind.y);
+
+  // Smooth decay mouse velocities
+  const dx = mouse.x - lastMouse.x;
+  const dy = mouse.y - lastMouse.y;
+  const mouseSpeed = Math.sqrt(mouse.vx * mouse.vx + mouse.vy * mouse.vy);
+  
+  if (!mouseMoving) {
+    mouse.vx *= 0.85;
+    mouse.vy *= 0.85;
+  }
+
+  // Update positions for all flowing entities
+  for (let p of particles) {
+    p.update(now, mouseSpeed);
+  }
+
+  // Resolve mutual elastic collisions between all particles (alphabets & circles)
+  resolveCollisions();
+
+  // Draw entities and remove out of bounds immediately
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    if (p.isOutOfBounds()) {
+      // Delete immediately to save memory and avoid lag
+      particles.splice(i, 1);
+    } else {
+      p.draw();
+    }
+  }
+
+  // Spawn new particles to maintain flow count
+  spawnNewParticles();
+
+  // Draw interactive mouse storm particle indicators (visual vortex vortex-lines)
+  if (mouseActive && mouseSpeed > 1) {
+    ctx.save();
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = '#fff';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.lineWidth = 1;
+
+    // Draw outer large vortex ring (scaled up to match the larger vortex)
+    ctx.beginPath();
+    ctx.arc(mouse.x, mouse.y, 180 + Math.sin(now * 0.006) * 15, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Draw inner vortex ring
+    ctx.beginPath();
+    ctx.arc(mouse.x, mouse.y, 70 + Math.cos(now * 0.008) * 8, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  requestAnimationFrame(animate);
+}
+
+// Start simulation
+animate();
+
+</script>
+</body>
+</html>

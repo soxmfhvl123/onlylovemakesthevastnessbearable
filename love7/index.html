@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>L O V E 7 - Clock</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+  <!-- Google Fonts — 18 families loaded for dynamic typographic effects -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:wght@400;700;900&family=Space+Mono:wght@400;700&family=Abril+Fatface&family=Righteous&family=Lobster&family=Oswald:wght@300;700&family=Dancing+Script:wght@700&family=Anton&family=Raleway:wght@100;900&family=Cormorant+Garamond:ital,wght@1,700&family=Pacifico&family=Black+Han+Sans&family=Cinzel:wght@900&family=Monoton&family=Bungee&family=Protest+Guerrilla&family=Bruno+Ace+SC&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #000;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      font-family: 'Space Mono', monospace;
+      touch-action: none;
+      user-select: none;
+      color: #fff;
+    }
+
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<script>
+/* ───────────────────────────────────────────
+   1. ASSETS & PALETTES
+   ─────────────────────────────────────────── */
+const FONTS = [
+  "'Bebas Neue', sans-serif", "'Playfair Display', serif", "'Space Mono', monospace",
+  "'Abril Fatface', cursive", "'Righteous', cursive", "'Lobster', cursive",
+  "'Oswald', sans-serif", "'Dancing Script', cursive", "'Anton', sans-serif",
+  "'Raleway', sans-serif", "'Cormorant Garamond', serif", "'Pacifico', cursive",
+  "'Cinzel', serif", "'Monoton', cursive", "'Bungee', cursive",
+  "'Protest Guerrilla', sans-serif", "'Bruno Ace SC', cursive",
+];
+
+const ALL_COLORS = [
+  '#FF2D55','#FF9F0A','#30D158','#0A84FF','#BF5AF2','#FF375F',
+  '#FFD60A','#4ECDC4','#F72585','#4CC9F0','#06FFA5','#FF2979',
+  '#FF6B00','#FF0099','#00FFCC','#B400FF','#FFBE0B','#FB5607',
+  '#FF006E','#8338EC','#00F5D4','#F15BB5','#FEE440','#00BBF9',
+  '#FF4D6D','#C77DFF','#FFD166','#06D6A0','#39FF14','#FF073A',
+  '#0FF0FC','#FF6EC7',
+];
+
+function pickFont() { return FONTS[Math.floor(Math.random() * FONTS.length)]; }
+function pickColor() { return ALL_COLORS[Math.floor(Math.random() * ALL_COLORS.length)]; }
+
+/* ───────────────────────────────────────────
+   2. CANVAS SETUP
+   ─────────────────────────────────────────── */
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let width = window.innerWidth;
+let height = window.innerHeight;
+canvas.width = width;
+canvas.height = height;
+
+window.addEventListener('resize', () => {
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = width;
+  canvas.height = height;
+});
+
+// Interactive state
+let mouse = { x: -1000, y: -1000 };
+window.addEventListener('mousemove', (e) => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+window.addEventListener('mouseleave', () => {
+  mouse.x = -1000;
+  mouse.y = -1000;
+});
+
+// Mobile Touch Support
+window.addEventListener('touchstart', (e) => {
+  if (e.touches[0]) {
+    mouse.x = e.touches[0].clientX;
+    mouse.y = e.touches[0].clientY;
+  }
+});
+window.addEventListener('touchmove', (e) => {
+  if (e.touches[0]) {
+    mouse.x = e.touches[0].clientX;
+    mouse.y = e.touches[0].clientY;
+  }
+});
+window.addEventListener('touchend', () => {
+  mouse.x = -1000;
+  mouse.y = -1000;
+});
+
+/* ───────────────────────────────────────────
+   3. BACKGROUND & FLOATING STARS
+   ─────────────────────────────────────────── */
+const starCount = 60;
+const stars = [];
+for (let i = 0; i < starCount; i++) {
+  stars.push({
+    x: Math.random() * width,
+    y: Math.random() * height,
+    size: Math.random() * 2.2 + 0.3,
+    color: pickColor(),
+    speed: Math.random() * 0.15 + 0.05,
+    angle: Math.random() * Math.PI * 2,
+    pulseSpeed: Math.random() * 0.02 + 0.01,
+    pulseOffset: Math.random() * Math.PI
+  });
+}
+
+function drawBackground(time) {
+  // Dark vignette background
+  const grad = ctx.createRadialGradient(width/2, height/2, 20, width/2, height/2, Math.max(width, height) * 0.8);
+  grad.addColorStop(0, '#0d0213');
+  grad.addColorStop(1, '#000000');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, width, height);
+
+  // Draw floating glowing background stars
+  for (let s of stars) {
+    s.x += Math.cos(s.angle) * s.speed;
+    s.y += Math.sin(s.angle) * s.speed;
+
+    // Boundary wrapping
+    if (s.x < -50) s.x = width + 50;
+    if (s.x > width + 50) s.x = -50;
+    if (s.y < -50) s.y = height + 50;
+    if (s.y > height + 50) s.y = -50;
+
+    const pulse = 0.3 + 0.7 * Math.abs(Math.sin(time * s.pulseSpeed + s.pulseOffset));
+
+    ctx.save();
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = s.color;
+    ctx.fillStyle = s.color;
+    ctx.globalAlpha = 0.15 * pulse;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.size * 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.globalAlpha = 0.5 * pulse;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+/* ───────────────────────────────────────────
+   4. CLOCK INITIALIZATION & STATE
+   ─────────────────────────────────────────── */
+// Pick 12 distinct colors for the hour circles
+const hourCircleColors = [];
+const colorPool = [...ALL_COLORS];
+for (let i = 0; i < 12; i++) {
+  const idx = Math.floor(Math.random() * colorPool.length);
+  hourCircleColors.push(colorPool.splice(idx, 1)[0]);
+}
+
+// Spring physics indicators state for the fleeing circles
+const indicators = [];
+for (let i = 0; i < 12; i++) {
+  indicators.push({
+    x: width / 2,
+    y: height / 2,
+    vx: 0,
+    vy: 0
+  });
+}
+
+// Hand woven letters structures
+function createHandLetters(length) {
+  const arr = [];
+  const source = ['L', 'O', 'V', 'E'];
+  for (let i = 0; i < length; i++) {
+    arr.push({
+      char: source[Math.floor(Math.random() * source.length)],
+      font: pickFont(),
+      color: pickColor(),
+      scale: 1,
+      lastChange: Date.now() - Math.random() * 500
+    });
+  }
+  return arr;
+}
+
+const hourLetters = createHandLetters(10);
+const minuteLetters = createHandLetters(15);
+const secondLetters = createHandLetters(25);
+
+// Periodic style shimmer on the letters
+function updateHandLetters(letters, interval) {
+  const now = Date.now();
+  const source = ['L', 'O', 'V', 'E'];
+  for (let i = 0; i < letters.length; i++) {
+    if (now - letters[i].lastChange > interval + (i * 20)) {
+      letters[i].font = pickFont();
+      letters[i].color = pickColor();
+      letters[i].char = source[Math.floor(Math.random() * source.length)];
+      letters[i].lastChange = now;
+    }
+  }
+}
+
+/* ───────────────────────────────────────────
+   5. CORE DRAW LOOP
+   ─────────────────────────────────────────── */
+function animate() {
+  const now = Date.now();
+
+  // Render Background
+  drawBackground(now);
+
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const clockRadius = Math.min(width, height) * 0.36;
+
+  // Update dynamic hands states
+  updateHandLetters(hourLetters, 500);
+  updateHandLetters(minuteLetters, 400);
+  updateHandLetters(secondLetters, 200);
+
+  // Compute Time Variables
+  const tDate = new Date();
+  const ms = tDate.getMilliseconds();
+  const sec = tDate.getSeconds() + ms / 1000;
+  const min = tDate.getMinutes() + sec / 60;
+  const hr = (tDate.getHours() % 12) + min / 60;
+
+  // Angles (Clock style: 0 radians at top/12 o'clock is -PI/2)
+  const angleHr = (hr * Math.PI / 6) - Math.PI / 2;
+  const angleMin = (min * Math.PI / 30) - Math.PI / 2;
+  const angleSec = (sec * Math.PI / 30) - Math.PI / 2;
+
+  // Update 12 Colored Hour Circles with Fleeing Spring Physics
+  const springStiffness = 0.08;
+  const friction = 0.82;
+  const repulsionRadius = 140;
+  const repulsionStrength = 26;
+
+  for (let i = 0; i < 12; i++) {
+    const indicatorAngle = (i * Math.PI / 6) - Math.PI / 2;
+    const defaultX = centerX + clockRadius * Math.cos(indicatorAngle);
+    const defaultY = centerY + clockRadius * Math.sin(indicatorAngle);
+
+    // Initial position setup on first load
+    if (indicators[i].x === width / 2 && indicators[i].y === height / 2) {
+      indicators[i].x = defaultX;
+      indicators[i].y = defaultY;
+    }
+
+    // Spring force back to default positions
+    let ax = (defaultX - indicators[i].x) * springStiffness;
+    let ay = (defaultY - indicators[i].y) * springStiffness;
+
+    // Mouse repulsion force (gently slide away when hovered!)
+    const dx = mouse.x - indicators[i].x;
+    const dy = mouse.y - indicators[i].y;
+    const distToMouse = Math.sqrt(dx * dx + dy * dy);
+
+    if (distToMouse < repulsionRadius) {
+      const force = (repulsionRadius - distToMouse) / repulsionRadius; // 0 to 1
+      ax -= (dx / (distToMouse || 1)) * force * repulsionStrength;
+      ay -= (dy / (distToMouse || 1)) * force * repulsionStrength;
+    }
+
+    indicators[i].vx = (indicators[i].vx + ax) * friction;
+    indicators[i].vy = (indicators[i].vy + ay) * friction;
+    indicators[i].x += indicators[i].vx;
+    indicators[i].y += indicators[i].vy;
+  }
+
+  // 1. Draw Hour Indicators (12 Colored Glowing Circles exactly matching other love folders)
+  for (let i = 0; i < 12; i++) {
+    const indicatorAngle = (i * Math.PI / 6) - Math.PI / 2;
+    const indX = indicators[i].x;
+    const indY = indicators[i].y;
+    const baseColor = hourCircleColors[i];
+
+    // Check if any clock hand is pointing close to this indicator (resonance effect!)
+    let resonance = 0;
+    const diffSec = Math.abs(angleSec - indicatorAngle) % (Math.PI * 2);
+    const diffMin = Math.abs(angleMin - indicatorAngle) % (Math.PI * 2);
+    const diffHr = Math.abs(angleHr - indicatorAngle) % (Math.PI * 2);
+    
+    // Smooth angle distance
+    const getDist = (diff) => Math.min(diff, Math.PI * 2 - diff);
+    
+    if (getDist(diffSec) < 0.1) resonance += 0.8;
+    if (getDist(diffMin) < 0.15) resonance += 1.0;
+    if (getDist(diffHr) < 0.2) resonance += 1.2;
+
+    // Ambient breathing
+    const breath = 0.15 * Math.sin(now * 0.002 + i);
+    // Base size increased by ~30% from 12 to 16
+    const sizeFactor = 1.35 + resonance * 0.4 + breath;
+    const radius = 16 * sizeFactor;
+
+    ctx.save();
+    // Plain colored circle with neon glow (matches love6/love3/love2/love4 exactly)
+    ctx.beginPath();
+    ctx.arc(indX, indY, radius, 0, Math.PI * 2);
+    ctx.shadowBlur = 28 + resonance * 15;
+    ctx.shadowColor = baseColor;
+    ctx.fillStyle = baseColor;
+    ctx.fill();
+
+    // Bright inner core of the SAME color (rather than plain white)
+    ctx.beginPath();
+    ctx.arc(indX, indY, radius * 0.48, 0, Math.PI * 2);
+    ctx.fillStyle = baseColor + 'CC';
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    
+    ctx.restore();
+  }
+
+  // Draw subtle center spindle
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, 12, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.shadowBlur = 15;
+  ctx.shadowColor = '#fff';
+  ctx.fill();
+  ctx.restore();
+
+  // ── DRAW CLOCK HANDS ──
+
+  // Function to draw hand composed of letters
+  function drawWovenHand(letters, angle, maxDist, spacing, fontSize, isSecHand = false) {
+    const lettersCount = letters.length;
+    
+    for (let i = 0; i < lettersCount; i++) {
+      const dist = (i + 1) * spacing;
+      if (dist > maxDist) break;
+
+      // Base coordinate along the line
+      let letterX = centerX + dist * Math.cos(angle);
+      let letterY = centerY + dist * Math.sin(angle);
+
+      // Mouse interactive reaction: shift letters slightly if mouse is near
+      const dx = mouse.x - letterX;
+      const dy = mouse.y - letterY;
+      const distToMouse = Math.sqrt(dx * dx + dy * dy);
+      let interactiveScale = 1;
+      
+      if (distToMouse < 100) {
+        const force = (100 - distToMouse) / 100;
+        interactiveScale += force * 0.4;
+        letterX -= (dx / distToMouse) * force * 15;
+        letterY -= (dy / distToMouse) * force * 15;
+      }
+
+      const lNode = letters[i];
+
+      ctx.save();
+      ctx.translate(letterX, letterY);
+      
+      // Let the letters align perfectly with the hand angle so they create a neat straight line
+      ctx.rotate(angle + Math.PI / 2);
+
+      const fSize = fontSize * interactiveScale;
+      ctx.font = `${fSize}px ${lNode.font}`;
+      ctx.fillStyle = lNode.color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      // Softened glow (rather than doubled overexposed glow) to match other love folders exactly
+      ctx.shadowBlur = isSecHand ? 10 : 16;
+      ctx.shadowColor = lNode.color;
+
+      // Render the character exactly once (without doubling or white hot core highlights)
+      ctx.fillText(lNode.char, 0, 0);
+
+      ctx.restore();
+    }
+  }
+
+  // 1. Hour Hand (Thick: large letters, widely spaced, shorter)
+  // Font Size upscaled by 80% to 99px (spacing set to 60px to allow beautiful overlapping weave)
+  // Max distance extended to 70% of clockRadius to draw more characters
+  drawWovenHand(hourLetters, angleHr, clockRadius * 0.7, 60, 99, false);
+
+  // 2. Minute Hand (Medium: medium letters, medium spaced, longer)
+  // Font Size upscaled by 80% to 65px (spacing set to 40px)
+  // Max distance set to 85% of clockRadius
+  drawWovenHand(minuteLetters, angleMin, clockRadius * 0.85, 40, 65, false);
+
+  // 3. Second Hand (Thin: small letters, closely spaced, longest)
+  // Font Size upscaled by 80% to 34px (spacing set to 22px)
+  // Max distance set to 95% of clockRadius
+  drawWovenHand(secondLetters, angleSec, clockRadius * 0.95, 22, 34, true);
+
+  // Visual pointer/particle trails spawning around mouse
+  if (mouse.x > 0 && mouse.x < width) {
+    ctx.save();
+    const cursorGrad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 40);
+    cursorGrad.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
+    cursorGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = cursorGrad;
+    ctx.beginPath();
+    ctx.arc(mouse.x, mouse.y, 40, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  requestAnimationFrame(animate);
+}
+
+// Start visualizer
+animate();
+
+</script>
+</body>
+</html>
