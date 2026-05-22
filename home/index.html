@@ -43,12 +43,27 @@
     }
 
     #title-stage {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 0px;
       user-select: none;
       filter: drop-shadow(0 0 40px rgba(255,255,255,0.06));
+      z-index: 100;
+      cursor: pointer;
+      transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1),
+                  top 0.8s cubic-bezier(0.25, 1, 0.5, 1),
+                  filter 0.8s ease;
+    }
+
+    #title-stage.fixed-top {
+      top: 85px;
+      transform: translate(-50%, -50%) scale(0.26);
+      filter: drop-shadow(0 0 20px rgba(255,255,255,0.12));
     }
 
     .title-line {
@@ -105,10 +120,100 @@
       cursor: pointer;
       user-select: none;
       transition: filter 0.3s ease;
+      position: relative;
     }
 
     .link-row:hover {
       filter: drop-shadow(0 0 28px rgba(255,255,255,0.22));
+    }
+
+    /* Cute Speech Bubble for LOVE */
+    .click-me-bubble {
+      position: absolute;
+      top: -24px;
+      left: calc(100% - 15px);
+      background: linear-gradient(135deg, #FF2979, #FF9F0A);
+      color: #fff;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 12px;
+      white-space: nowrap;
+      box-shadow: 0 0 15px rgba(255, 41, 121, 0.6);
+      animation: bubbleFloat 1.8s ease-in-out infinite alternate;
+      pointer-events: none;
+      user-select: none;
+      z-index: 20;
+    }
+
+    .click-me-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 12px;
+      border-width: 6px 6px 0 0;
+      border-style: solid;
+      border-color: #FF2979 transparent transparent transparent;
+      display: block;
+      width: 0;
+    }
+
+    @keyframes bubbleFloat {
+      0% {
+        transform: translateY(0) rotate(3deg);
+      }
+      100% {
+        transform: translateY(-6px) rotate(-3deg);
+      }
+    }
+
+    /* Cute Speech Bubble for Title */
+    .title-click-me-bubble {
+      position: absolute;
+      top: -28px;
+      left: calc(100% - 35px);
+      background: linear-gradient(135deg, #06FFA5, #00B4FF);
+      color: #fff;
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 14px;
+      white-space: nowrap;
+      box-shadow: 0 0 20px rgba(6, 255, 165, 0.6), 0 0 5px rgba(0, 180, 255, 0.4);
+      animation: bubbleFloatTitle 2s ease-in-out infinite alternate;
+      pointer-events: none;
+      user-select: none;
+      z-index: 120;
+      transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .title-click-me-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 14px;
+      border-width: 6px 6px 0 0;
+      border-style: solid;
+      border-color: #06FFA5 transparent transparent transparent;
+      display: block;
+      width: 0;
+    }
+
+    #title-stage.fixed-top .title-click-me-bubble {
+      opacity: 0;
+      transform: scale(0) translateY(-20px);
+      pointer-events: none;
+    }
+
+    @keyframes bubbleFloatTitle {
+      0% {
+        transform: translateY(0) rotate(-2deg);
+      }
+      100% {
+        transform: translateY(-8px) rotate(4deg);
+      }
     }
 
     .link-letter {
@@ -139,6 +244,7 @@
 <!-- HERO: title full viewport -->
 <section class="hero">
   <div id="title-stage">
+    <div class="title-click-me-bubble">click me! <span>✨</span></div>
     <div class="title-line" id="line1"></div>
     <div class="title-line" id="line2"></div>
     <div class="title-line" id="line3"></div>
@@ -218,7 +324,7 @@ window.addEventListener('resize', resize);
 
 const ASCII = 'LOVE♥01アイウエオ∑∆Ω∞≈αβγδ⚡★░▒▓';
 
-const particles = Array.from({ length: 70 }, () => ({
+const particles = Array.from({ length: 55 }, () => ({
   x: Math.random() * window.innerWidth,
   y: Math.random() * window.innerHeight,
   r: Math.random() * 1.8 + 0.3,
@@ -228,7 +334,7 @@ const particles = Array.from({ length: 70 }, () => ({
   color: ALL_COLORS[Math.floor(Math.random() * ALL_COLORS.length)],
 }));
 
-const floatChars = Array.from({ length: 55 }, () => ({
+const floatChars = Array.from({ length: 38 }, () => ({
   x: Math.random() * window.innerWidth,
   y: Math.random() * window.innerHeight,
   char: ASCII[Math.floor(Math.random() * ASCII.length)],
@@ -244,38 +350,53 @@ function drawBg() {
   bgCtx.fillStyle = '#000';
   bgCtx.fillRect(0, 0, canvas.width, canvas.height);
 
+  let lastFont = '';
+
+  // Draw floating characters - Optimized without shadowBlur & save/restore
   floatChars.forEach(fc => {
     fc.y -= fc.speed;
     fc.timer--;
     if (fc.y < -30)    { fc.y = canvas.height + 20; fc.x = Math.random() * canvas.width; }
     if (fc.timer <= 0) { fc.char = ASCII[Math.floor(Math.random() * ASCII.length)]; fc.timer = 40 + Math.random() * 100; }
-    bgCtx.save();
+    
+    const fontStr = `${Math.round(fc.size)}px 'Space Mono', monospace`;
+    if (fontStr !== lastFont) {
+      bgCtx.font = fontStr;
+      lastFont = fontStr;
+    }
+    
+    bgCtx.fillStyle = fc.color;
+    
+    // Layer 1: Hardware-accelerated glow simulation (transparent double draw)
+    bgCtx.globalAlpha = fc.alpha * 0.3;
+    bgCtx.fillText(fc.char, fc.x, fc.y);
+    
+    // Layer 2: Core text
     bgCtx.globalAlpha = fc.alpha;
-    bgCtx.fillStyle   = fc.color;
-    bgCtx.shadowColor = fc.color;
-    bgCtx.shadowBlur  = 14;
-    bgCtx.font        = `${fc.size}px 'Space Mono', monospace`;
     bgCtx.fillText(fc.char, fc.x, fc.y);
-    bgCtx.globalAlpha = fc.alpha * 0.5;
-    bgCtx.fillText(fc.char, fc.x, fc.y);
-    bgCtx.restore();
   });
 
+  // Draw particles - Optimized without shadowBlur & save/restore
   particles.forEach(p => {
     p.x += p.vx; p.y += p.vy;
     if (p.x < 0) p.x = canvas.width;
     if (p.x > canvas.width)  p.x = 0;
     if (p.y < 0) p.y = canvas.height;
     if (p.y > canvas.height) p.y = 0;
-    bgCtx.save();
+    
+    bgCtx.fillStyle = p.color;
+
+    // Layer 1: Hardware-accelerated glow halo (larger transparent circle)
+    bgCtx.globalAlpha = p.alpha * 0.25;
+    bgCtx.beginPath();
+    bgCtx.arc(p.x, p.y, p.r * 2.8, 0, Math.PI * 2);
+    bgCtx.fill();
+
+    // Layer 2: Core dot
     bgCtx.globalAlpha = p.alpha;
     bgCtx.beginPath();
     bgCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    bgCtx.fillStyle   = p.color;
-    bgCtx.shadowColor = p.color;
-    bgCtx.shadowBlur  = 6;
     bgCtx.fill();
-    bgCtx.restore();
   });
 
   requestAnimationFrame(drawBg);
@@ -382,9 +503,46 @@ PROJECTS.forEach(proj => {
   a.href      = proj.href;
   a.className = 'link-row';
   const { spans, states } = buildLetterSpans(proj.label, a, 'link-letter');
+
+  if (proj.label === 'LOVE') {
+    const bubble = document.createElement('div');
+    bubble.className = 'click-me-bubble';
+    bubble.innerHTML = 'click me! <span>💕</span>';
+    a.appendChild(bubble);
+  }
+
   linksEl.appendChild(a);
   linkSpanGroups.push({ spans, states });
 });
+
+/* ─────────────────────────────────────────
+   INTERACTION: CLICK TO SCROLL & STICKY TITLE
+───────────────────────────────────────── */
+const titleStage = document.getElementById('title-stage');
+
+titleStage.addEventListener('click', () => {
+  if (titleStage.classList.contains('fixed-top')) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    const projectsSection = document.querySelector('.projects');
+    projectsSection.scrollIntoView({ behavior: 'smooth' });
+  }
+});
+
+function handleScroll() {
+  const scrollTop = window.scrollY || document.documentElement.scrollTop;
+  const threshold = window.innerHeight * 0.35; // 35% of viewport height
+  
+  if (scrollTop > threshold) {
+    titleStage.classList.add('fixed-top');
+  } else {
+    titleStage.classList.remove('fixed-top');
+  }
+}
+
+window.addEventListener('scroll', handleScroll);
+// Run on initial load
+handleScroll();
 
 /* ─────────────────────────────────────────
    START — enable transitions THEN kick off
