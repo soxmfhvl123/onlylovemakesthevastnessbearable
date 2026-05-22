@@ -127,12 +127,9 @@
       filter: drop-shadow(0 0 28px rgba(255,255,255,0.22));
     }
 
-    /* Cute Speech Bubble for LOVE */
+    /* Base Cute Speech Bubble style */
     .click-me-bubble {
       position: absolute;
-      top: -24px;
-      left: calc(100% - 15px);
-      background: linear-gradient(135deg, #FF2979, #FF9F0A);
       color: #fff;
       font-family: 'Space Mono', monospace;
       font-size: 11px;
@@ -140,14 +137,20 @@
       padding: 4px 10px;
       border-radius: 12px;
       white-space: nowrap;
-      box-shadow: 0 0 15px rgba(255, 41, 121, 0.6);
-      animation: bubbleFloat 1.8s ease-in-out infinite alternate;
       pointer-events: none;
       user-select: none;
       z-index: 20;
     }
 
-    .click-me-bubble::after {
+    /* 1. Right positioned bubble (Default) */
+    .click-me-bubble.bubble-right {
+      top: -24px;
+      left: calc(100% - 15px);
+      background: linear-gradient(135deg, #FF2979, #FF9F0A);
+      box-shadow: 0 0 15px rgba(255, 41, 121, 0.6);
+      animation: bubbleFloat 1.8s ease-in-out infinite alternate;
+    }
+    .click-me-bubble.bubble-right::after {
       content: '';
       position: absolute;
       bottom: -5px;
@@ -159,13 +162,86 @@
       width: 0;
     }
 
+    /* 2. Left positioned bubble */
+    .click-me-bubble.bubble-left {
+      top: -24px;
+      right: calc(100% - 15px);
+      background: linear-gradient(135deg, #FF2979, #FF9F0A);
+      box-shadow: 0 0 15px rgba(255, 41, 121, 0.6);
+      animation: bubbleFloatLeft 1.8s ease-in-out infinite alternate;
+    }
+    .click-me-bubble.bubble-left::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      right: 12px;
+      border-width: 6px 0 0 6px;
+      border-style: solid;
+      border-color: #FF2979 transparent transparent transparent;
+      display: block;
+      width: 0;
+    }
+
+    /* 3. Top positioned bubble (for VASTNESS V) */
+    .click-me-bubble.bubble-top {
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #BF5AF2, #FF2D55);
+      box-shadow: 0 0 15px rgba(191, 90, 242, 0.6);
+      animation: bubbleFloatTop 1.8s ease-in-out infinite alternate;
+    }
+    .click-me-bubble.bubble-top::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 5px 5px 0 5px;
+      border-style: solid;
+      border-color: #BF5AF2 transparent transparent transparent;
+      display: block;
+      width: 0;
+    }
+
+    /* 4. Bottom positioned bubble (for FOUNTAIN T) */
+    .click-me-bubble.bubble-bottom {
+      top: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #0A84FF, #00FFCC);
+      box-shadow: 0 0 15px rgba(10, 132, 255, 0.6);
+      animation: bubbleFloatBottom 1.8s ease-in-out infinite alternate;
+    }
+    .click-me-bubble.bubble-bottom::after {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 0 5px 5px 5px;
+      border-style: solid;
+      border-color: transparent transparent #0A84FF transparent;
+      display: block;
+      width: 0;
+    }
+
+    /* Floating Animations */
     @keyframes bubbleFloat {
-      0% {
-        transform: translateY(0) rotate(3deg);
-      }
-      100% {
-        transform: translateY(-6px) rotate(-3deg);
-      }
+      0% { transform: translateY(0) rotate(3deg); }
+      100% { transform: translateY(-6px) rotate(-3deg); }
+    }
+    @keyframes bubbleFloatLeft {
+      0% { transform: translateY(0) rotate(-3deg); }
+      100% { transform: translateY(-6px) rotate(3deg); }
+    }
+    @keyframes bubbleFloatTop {
+      0% { transform: translateX(-50%) translateY(0) rotate(1.5deg); }
+      100% { transform: translateX(-50%) translateY(-6px) rotate(-1.5deg); }
+    }
+    @keyframes bubbleFloatBottom {
+      0% { transform: translateX(-50%) translateY(0) rotate(-1.5deg); }
+      100% { transform: translateX(-50%) translateY(6px) rotate(1.5deg); }
     }
 
     /* Cute Speech Bubble for Title */
@@ -222,6 +298,7 @@
       font-size: clamp(18px, 3vw, 48px);
       line-height: 0.95;
       will-change: transform, color;
+      position: relative;
     }
 
     .link-letter.animate {
@@ -506,9 +583,40 @@ PROJECTS.forEach(proj => {
 
   if (proj.label === 'LOVE') {
     const bubble = document.createElement('div');
-    bubble.className = 'click-me-bubble';
+    bubble.className = 'click-me-bubble bubble-right';
     bubble.innerHTML = 'click me! <span>💕</span>';
     a.appendChild(bubble);
+  } else if (proj.label === 'THE COLLISION') {
+    const bubble = document.createElement('div');
+    bubble.className = 'click-me-bubble bubble-left';
+    bubble.innerHTML = 'click me! <span>💕</span>';
+    a.appendChild(bubble);
+  } else if (proj.label === 'THE GRAVITY BALL PIT') {
+    const bubble = document.createElement('div');
+    bubble.className = 'click-me-bubble bubble-right';
+    bubble.innerHTML = 'click me! <span>💕</span>';
+    a.appendChild(bubble);
+  } else if (proj.label === 'FLOATING AND TRAIL') {
+    const bubble = document.createElement('div');
+    bubble.className = 'click-me-bubble bubble-right';
+    bubble.innerHTML = 'click me! <span>💕</span>';
+    a.appendChild(bubble);
+  } else if (proj.label === 'THE VASTNESS') {
+    // Letter "V" is index 4 in "THE VASTNESS"
+    if (spans[4]) {
+      const bubble = document.createElement('div');
+      bubble.className = 'click-me-bubble bubble-top';
+      bubble.innerHTML = 'click me! <span>💕</span>';
+      spans[4].appendChild(bubble);
+    }
+  } else if (proj.label === 'FOUNTAIN') {
+    // Letter "T" is index 4 in "FOUNTAIN"
+    if (spans[4]) {
+      const bubble = document.createElement('div');
+      bubble.className = 'click-me-bubble bubble-bottom';
+      bubble.innerHTML = 'click me! <span>💕</span>';
+      spans[4].appendChild(bubble);
+    }
   }
 
   linksEl.appendChild(a);
